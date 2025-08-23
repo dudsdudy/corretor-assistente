@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, Square, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VoiceInputProps {
   onTranscript: (transcript: string) => void;
@@ -40,13 +41,15 @@ const VoiceInput = ({ onTranscript, loading = false }: VoiceInputProps) => {
         try {
           toast({ title: 'Transcrevendo áudio...', description: 'Aguarde alguns instantes.' });
           const base64Audio = await toBase64(audioBlob);
-          const res = await fetch('https://kxnikregrasjkjntoyhm.supabase.co/functions/v1/voice-to-text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ audio: base64Audio })
+          
+          // Use Supabase client to call edge function
+          const { data, error } = await supabase.functions.invoke('voice-to-text', {
+            body: { audio: base64Audio }
           });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Falha na transcrição');
+
+          if (error) throw new Error(error.message);
+          if (!data.text) throw new Error('Falha na transcrição');
+
           setTranscript(data.text);
           onTranscript(data.text);
         } catch (err: any) {

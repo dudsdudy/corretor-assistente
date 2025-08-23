@@ -162,21 +162,45 @@ const Index = () => {
     if (!analysis || !user) return;
     
     try {
+      // Extract client data from mock data or form
+      const mockClientData: ClientData = {
+        name: analysis.clientName,
+        age: 35, // Default mock values
+        gender: "masculino",
+        profession: "Engenheiro",
+        monthlyIncome: 8000,
+        hasDependents: true,
+        dependentsCount: 2,
+        currentDebts: 0,
+        healthStatus: "excelente",
+        existingInsurance: false
+      };
+
       const { error } = await supabase
         .from('client_analyses')
         .insert({
           broker_id: user.id,
           client_name: analysis.clientName,
+          client_age: mockClientData.age,
+          monthly_income: mockClientData.monthlyIncome,
           risk_profile: analysis.riskProfile,
+          client_gender: mockClientData.gender,
+          client_profession: mockClientData.profession,
+          health_status: mockClientData.healthStatus,
+          has_dependents: mockClientData.hasDependents,
+          dependents_count: mockClientData.dependentsCount,
+          current_debts: mockClientData.currentDebts,
+          existing_insurance: mockClientData.existingInsurance,
           recommended_coverage: analysis.recommendedCoverages as any,
-          justifications: { summary: analysis.summary } as any
+          justifications: { summary: analysis.summary } as any,
+          status: 'novo'
         });
       
       if (error) throw error;
       
       toast({
-        title: "Análise salva!",
-        description: "A análise foi salva no seu painel de leads.",
+        title: "Estudo salvo!",
+        description: "O estudo foi salvo no seu painel de leads.",
       });
     } catch (error: any) {
       toast({
@@ -238,13 +262,13 @@ const Index = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => toast({ title: 'Leads / Oportunidades', description: 'Painel de Leads ficará disponível em breve.' })}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
               <Database className="h-4 w-4 mr-2" />
               Painel de Leads
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => toast({ title: 'Kanban', description: 'Quadro Kanban estará disponível em breve.' })}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/sales")}>
               <Kanban className="h-4 w-4 mr-2" />
-              Kanban
+              Gestão de Vendas
             </Button>
             <Button variant="ghost" size="sm" onClick={() => toast({ title: 'Personalizar', description: 'Opções de personalização em breve.' })}>
               <Settings className="h-4 w-4 mr-2" />

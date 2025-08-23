@@ -1,0 +1,373 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Users, 
+  ArrowLeft, 
+  FileText, 
+  Calendar,
+  Eye,
+  Trash2,
+  Filter
+} from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { User } from '@supabase/supabase-js';
+
+interface ClientAnalysis {
+  id: string;
+  client_name: string;
+  risk_profile: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  client_age?: number;
+  monthly_income?: number;
+  client_profession?: string;
+  recommended_coverage?: any;
+}
+
+const Leads = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [analyses, setAnalyses] = useState<ClientAnalysis[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      if (user) {
+        fetchAnalyses();
+      }
+    };
+    getUser();
+  }, []);
+
+  const fetchAnalyses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('client_analyses')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAnalyses(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar leads",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStatus = async (analysisId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_analyses')
+        .update({ status: newStatus })
+        .eq('id', analysisId);
+
+      if (error) throw error;
+
+      // Update local state
+      setAnalyses(prev => 
+        prev.map(analysis => 
+          analysis.id === analysisId 
+            ? { ...analysis, status: newStatus }
+            : analysis
+        )
+      );
+
+      toast({
+        title: "Status atualizado",
+        description: `Lead marcado como "${getStatusLabel(newStatus)}"`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar status",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteAnalysis = async (analysisId: string) => {
+    if (!confirm("Tem certeza que deseja excluir este lead?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('client_analyses')
+        .delete()
+        .eq('id', analysisId);
+
+      if (error) throw error;
+
+      setAnalyses(prev => prev.filter(analysis => analysis.id !== analysisId));
+
+      toast({
+        title: "Lead excluído",
+        description: "Lead removido com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir lead",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'novo': 'Novo',
+      'contato': 'Em Contato',
+      'proposta': 'Proposta Enviada',
+      'negociacao': 'Em Negociação',
+      'fechado': 'Fechado',
+      'perdido': 'Perdido'
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'novo': 'bg-blue-500',
+      'contato': 'bg-yellow-500',
+      'proposta': 'bg-purple-500',
+      'negociacao': 'bg-orange-500',
+      'fechado': 'bg-green-500',
+      'perdido': 'bg-red-500'
+    };
+    return colors[status] || 'bg-gray-500';
+  };
+
+  const filteredAnalyses = statusFilter === "todos" 
+    ? analyses 
+    : analyses.filter(analysis => analysis.status === statusFilter);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/30">
+        <div className="animate-pulse text-lg text-muted-foreground">Carregando leads...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-primary rounded-lg">
+                <Users className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Painel de Leads</h1>
+                <p className="text-muted-foreground">Gerencie suas oportunidades de negócio</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="novo">Novos</SelectItem>
+                  <SelectItem value="contato">Em Contato</SelectItem>
+                  <SelectItem value="proposta">Proposta Enviada</SelectItem>
+                  <SelectItem value="negociacao">Em Negociação</SelectItem>
+                  <SelectItem value="fechado">Fechados</SelectItem>
+                  <SelectItem value="perdido">Perdidos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Leads</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{analyses.length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Novos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-blue-600">
+                {analyses.filter(a => a.status === 'novo').length}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Fechados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-green-600">
+                {analyses.filter(a => a.status === 'fechado').length}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Taxa de Conversão</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-primary">
+                {analyses.length > 0 
+                  ? Math.round((analyses.filter(a => a.status === 'fechado').length / analyses.length) * 100)
+                  : 0}%
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Leads Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Leads e Oportunidades
+            </CardTitle>
+            <CardDescription>
+              {filteredAnalyses.length} lead(s) encontrado(s)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredAnalyses.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum lead encontrado</h3>
+                <p className="text-muted-foreground mb-4">
+                  {statusFilter === "todos" 
+                    ? "Comece criando seu primeiro estudo de seguro de vida."
+                    : `Nenhum lead com status "${getStatusLabel(statusFilter)}" encontrado.`
+                  }
+                </p>
+                <Button onClick={() => navigate("/")} variant="outline">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Criar Novo Estudo
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Perfil</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAnalyses.map((analysis) => (
+                    <TableRow key={analysis.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{analysis.client_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {analysis.client_age && `${analysis.client_age} anos`}
+                            {analysis.client_profession && ` • ${analysis.client_profession}`}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{analysis.risk_profile}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={analysis.status}
+                          onValueChange={(value) => updateStatus(analysis.id, value)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${getStatusColor(analysis.status)}`} />
+                              <span className="text-xs">{getStatusLabel(analysis.status)}</span>
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="novo">Novo</SelectItem>
+                            <SelectItem value="contato">Em Contato</SelectItem>
+                            <SelectItem value="proposta">Proposta Enviada</SelectItem>
+                            <SelectItem value="negociacao">Em Negociação</SelectItem>
+                            <SelectItem value="fechado">Fechado</SelectItem>
+                            <SelectItem value="perdido">Perdido</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(analysis.created_at).toLocaleDateString('pt-BR')}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // TODO: Implementar visualização detalhada
+                              toast({
+                                title: "Em breve",
+                                description: "Visualização detalhada será implementada em breve."
+                              });
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteAnalysis(analysis.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Leads;
