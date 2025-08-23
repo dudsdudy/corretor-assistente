@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      client_analyses: {
+        Row: {
+          broker_id: string
+          client_age: number | null
+          client_gender: string | null
+          client_name: string
+          client_profession: string | null
+          created_at: string
+          current_debts: number | null
+          dependents_count: number | null
+          existing_insurance: boolean | null
+          has_dependents: boolean | null
+          health_status: string | null
+          id: string
+          justifications: Json | null
+          monthly_income: number | null
+          recommended_coverage: Json | null
+          risk_profile: string | null
+          updated_at: string
+        }
+        Insert: {
+          broker_id: string
+          client_age?: number | null
+          client_gender?: string | null
+          client_name: string
+          client_profession?: string | null
+          created_at?: string
+          current_debts?: number | null
+          dependents_count?: number | null
+          existing_insurance?: boolean | null
+          has_dependents?: boolean | null
+          health_status?: string | null
+          id?: string
+          justifications?: Json | null
+          monthly_income?: number | null
+          recommended_coverage?: Json | null
+          risk_profile?: string | null
+          updated_at?: string
+        }
+        Update: {
+          broker_id?: string
+          client_age?: number | null
+          client_gender?: string | null
+          client_name?: string
+          client_profession?: string | null
+          created_at?: string
+          current_debts?: number | null
+          dependents_count?: number | null
+          existing_insurance?: boolean | null
+          has_dependents?: boolean | null
+          health_status?: string | null
+          id?: string
+          justifications?: Json | null
+          monthly_income?: number | null
+          recommended_coverage?: Json | null
+          risk_profile?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
