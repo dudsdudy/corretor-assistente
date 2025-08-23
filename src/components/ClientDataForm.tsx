@@ -1,0 +1,236 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FileText, Calculator } from "lucide-react";
+
+export interface ClientData {
+  name: string;
+  age: number;
+  gender: string;
+  profession: string;
+  monthlyIncome: number;
+  hasDependents: boolean;
+  dependentsCount: number;
+  currentDebts: number;
+  healthStatus: string;
+  existingInsurance: boolean;
+}
+
+interface ClientDataFormProps {
+  onSubmit: (data: ClientData) => void;
+  loading?: boolean;
+}
+
+const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
+  const [formData, setFormData] = useState<ClientData>({
+    name: "",
+    age: 0,
+    gender: "",
+    profession: "",
+    monthlyIncome: 0,
+    hasDependents: false,
+    dependentsCount: 0,
+    currentDebts: 0,
+    healthStatus: "",
+    existingInsurance: false,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleInputChange = (field: keyof ClientData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  return (
+    <Card className="w-full max-w-2xl mx-auto shadow-medium bg-gradient-card">
+      <CardHeader className="text-center">
+        <CardTitle className="flex items-center justify-center gap-2">
+          <FileText className="h-6 w-6 text-primary" />
+          Dados do Cliente
+        </CardTitle>
+        <CardDescription>
+          Preencha as informações para gerar uma recomendação personalizada
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome Completo</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Nome do cliente"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="age">Idade</Label>
+              <Input
+                id="age"
+                type="number"
+                min="18"
+                max="85"
+                value={formData.age || ""}
+                onChange={(e) => handleInputChange("age", parseInt(e.target.value) || 0)}
+                placeholder="32"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <Label>Sexo</Label>
+              <RadioGroup
+                value={formData.gender}
+                onValueChange={(value) => handleInputChange("gender", value)}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="masculino" id="male" />
+                  <Label htmlFor="male">Masculino</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="feminino" id="female" />
+                  <Label htmlFor="female">Feminino</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profession">Profissão</Label>
+              <Input
+                id="profession"
+                value={formData.profession}
+                onChange={(e) => handleInputChange("profession", e.target.value)}
+                placeholder="Ex: Engenheiro, Médico, Empresário"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Financial Information */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Calculator className="h-5 w-5 text-success" />
+              Informações Financeiras
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="monthlyIncome">Renda Mensal (R$)</Label>
+                <Input
+                  id="monthlyIncome"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.monthlyIncome || ""}
+                  onChange={(e) => handleInputChange("monthlyIncome", parseFloat(e.target.value) || 0)}
+                  placeholder="5000.00"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="currentDebts">Dívidas Atuais (R$)</Label>
+                <Input
+                  id="currentDebts"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.currentDebts || ""}
+                  onChange={(e) => handleInputChange("currentDebts", parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Family Information */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="hasDependents"
+                checked={formData.hasDependents}
+                onCheckedChange={(checked) => handleInputChange("hasDependents", checked)}
+              />
+              <Label htmlFor="hasDependents">Possui dependentes</Label>
+            </div>
+            
+            {formData.hasDependents && (
+              <div className="space-y-2">
+                <Label htmlFor="dependentsCount">Número de Dependentes</Label>
+                <Select
+                  value={formData.dependentsCount.toString()}
+                  onValueChange={(value) => handleInputChange("dependentsCount", parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5 ou mais</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Health Information */}
+          <div className="space-y-2">
+            <Label>Estado de Saúde</Label>
+            <Select
+              value={formData.healthStatus}
+              onValueChange={(value) => handleInputChange("healthStatus", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o estado de saúde" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="excelente">Excelente</SelectItem>
+                <SelectItem value="bom">Bom</SelectItem>
+                <SelectItem value="regular">Regular</SelectItem>
+                <SelectItem value="precario">Precário</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Existing Insurance */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="existingInsurance"
+              checked={formData.existingInsurance}
+              onCheckedChange={(checked) => handleInputChange("existingInsurance", checked)}
+            />
+            <Label htmlFor="existingInsurance">Já possui seguro de vida</Label>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full"
+            variant="hero"
+            size="xl"
+            disabled={loading}
+          >
+            {loading ? "Gerando Análise..." : "Gerar Recomendação"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ClientDataForm;
