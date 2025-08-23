@@ -18,25 +18,42 @@ const VoiceInput = ({ onTranscript, loading = false }: VoiceInputProps) => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
 
       const audioChunks: Blob[] = [];
       
       mediaRecorder.ondataavailable = (event) => {
-        audioChunks.push(event.data);
+        if (event.data.size > 0) audioChunks.push(event.data);
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        // Here you would send the audio to your speech-to-text service
-        // For now, we'll simulate with a placeholder
-        const mockTranscript = `Cliente João Silva, 35 anos, masculino, engenheiro, 
-        renda mensal de R$ 8.000, possui 2 dependentes, sem dívidas, 
-        saúde excelente, não possui seguro de vida atualmente.`;
-        
-        setTranscript(mockTranscript);
-        onTranscript(mockTranscript);
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const toBase64 = (blob: Blob) => new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+        try {
+          toast({ title: 'Transcrevendo áudio...', description: 'Aguarde alguns instantes.' });
+          const base64Audio = await toBase64(audioBlob);
+          const res = await fetch('https://kxnikregrasjkjntoyhm.supabase.co/functions/v1/voice-to-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audio: base64Audio })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Falha na transcrição');
+          setTranscript(data.text);
+          onTranscript(data.text);
+        } catch (err: any) {
+          const fallback = 'Transcrição indisponível no momento. Descreva manualmente os dados do cliente.';
+          setTranscript(fallback);
+          toast({ title: 'Falha na transcrição', description: err.message, variant: 'destructive' });
+        }
         
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop());
@@ -128,7 +145,7 @@ const VoiceInput = ({ onTranscript, loading = false }: VoiceInputProps) => {
 
         <div className="text-xs text-muted-foreground text-center space-y-1">
           <p>💡 <strong>Dica:</strong> Mencione idade, sexo, profissão, renda mensal, dependentes, dívidas e estado de saúde</p>
-          <p>⚠️ <strong>Versão Demo:</strong> Usando transcrição simulada para demonstração</p>
+          <p>🎤 <strong>Transcrição Automática:</strong> Powered by OpenAI Whisper</p>
         </div>
       </CardContent>
     </Card>

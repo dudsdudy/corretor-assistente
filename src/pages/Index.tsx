@@ -20,6 +20,8 @@ import heroImage from "@/assets/hero-insurance.jpg";
 import ClientDataForm, { ClientData } from "@/components/ClientDataForm";
 import VoiceInput from "@/components/VoiceInput";
 import RecommendationDisplay, { ClientAnalysis } from "@/components/RecommendationDisplay";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -74,7 +76,7 @@ const Index = () => {
     return {
       clientName: clientData.name,
       riskProfile: clientData.age > 50 || clientData.healthStatus === "precario" ? 
-                   "Alto Risco" : clientData.age > 35 ? "Risco Médio" : "Baixo Risco",
+                   "Alto Risco" : clientData.age > 35 ? "Risco Médio" : "Perfil Adequado",
       recommendedCoverages: [
         {
           type: "Morte",
@@ -113,7 +115,7 @@ const Index = () => {
         }
       ],
       totalPremium: 0,
-      summary: `Baseado no perfil de ${clientData.name}, ${clientData.age} anos, ${clientData.profession.toLowerCase()}, com renda mensal de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.monthlyIncome)}, recomendamos um conjunto de coberturas que oferece proteção abrangente. ${clientData.hasDependents ? `Com ${clientData.dependentsCount} dependente(s), priorizamos coberturas que garantam a segurança financeira da família.` : 'Focamos em coberturas que protegem sua estabilidade financeira pessoal.'} O perfil de risco foi avaliado considerando idade, profissão e estado de saúde.`
+      summary: `Baseado no perfil de ${clientData.name}, ${clientData.age} anos, ${clientData.profession.toLowerCase()}, com renda mensal de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.monthlyIncome)}, recomendamos um conjunto de coberturas que oferece proteção abrangente. ${clientData.hasDependents ? `Com ${clientData.dependentsCount} dependente(s), priorizamos coberturas que garantam a segurança financeira da família.` : 'Focamos em coberturas que protegem sua estabilidade financeira pessoal.'} O perfil foi avaliado considerando idade, profissão e estado de saúde.`
     };
   };
 
@@ -174,7 +176,7 @@ const Index = () => {
       
       toast({
         title: "Análise salva!",
-        description: "A análise foi salva no seu banco de dados.",
+        description: "A análise foi salva no seu painel de leads.",
       });
     } catch (error: any) {
       toast({
@@ -185,11 +187,24 @@ const Index = () => {
     }
   };
 
-  const handleGeneratePDF = () => {
-    toast({
-      title: "Gerando PDF...",
-      description: "Funcionalidade de PDF será implementada em breve.",
-    });
+  const handleGeneratePDF = async () => {
+    const element = document.getElementById('proposal-content');
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgProps = { width: canvas.width, height: canvas.height };
+      const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+      const imgWidth = imgProps.width * ratio;
+      const imgHeight = imgProps.height * ratio;
+      pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, 10, imgWidth, imgHeight);
+      pdf.save(`proposta_${analysis?.clientName || 'cliente'}.pdf`);
+    } catch (e: any) {
+      toast({ title: 'Erro ao gerar PDF', description: e.message, variant: 'destructive' });
+    }
   };
 
   const resetToChoice = () => {
@@ -223,15 +238,15 @@ const Index = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => toast({ title: 'Leads / Oportunidades', description: 'Painel de Leads ficará disponível em breve.' })}>
               <Database className="h-4 w-4 mr-2" />
-              Banco de Dados
+              Painel de Leads
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => toast({ title: 'Kanban', description: 'Quadro Kanban estará disponível em breve.' })}>
               <Kanban className="h-4 w-4 mr-2" />
               Kanban
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => toast({ title: 'Personalizar', description: 'Opções de personalização em breve.' })}>
               <Settings className="h-4 w-4 mr-2" />
               Personalizar
             </Button>
@@ -261,7 +276,7 @@ const Index = () => {
                       Bem-vindo, {user?.user_metadata?.full_name || 'Corretor'}!
                     </h2>
                     <p className="text-lg mb-6 opacity-90">
-                      Gere recomendações personalizadas de seguro de vida com inteligência artificial. 
+                      Gere estudos de forma simples, prática e inteligente.
                       Escolha como deseja coletar os dados do seu cliente.
                     </p>
                   </div>
@@ -372,11 +387,13 @@ const Index = () => {
                 <span className="text-sm font-medium text-success">Análise Concluída</span>
               </div>
             </div>
-            <RecommendationDisplay 
-              analysis={analysis}
-              onGeneratePDF={handleGeneratePDF}
-              onSaveAnalysis={handleSaveAnalysis}
-            />
+            <div id="proposal-content">
+              <RecommendationDisplay 
+                analysis={analysis}
+                onGeneratePDF={handleGeneratePDF}
+                onSaveAnalysis={handleSaveAnalysis}
+              />
+            </div>
           </div>
         )}
       </main>

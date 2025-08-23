@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Shield, FileText, Download, TrendingUp, Heart, Briefcase, Home, Skull } from "lucide-react";
+import { Shield, FileText, Download, TrendingUp, Heart, Briefcase, Home } from "lucide-react";
 
 export interface CoverageRecommendation {
   type: string;
@@ -29,7 +29,7 @@ interface RecommendationDisplayProps {
 const getCoverageIcon = (type: string) => {
   switch (type.toLowerCase()) {
     case "morte":
-      return <Skull className="h-5 w-5" />;
+      return <Shield className="h-5 w-5" />;
     case "invalidez":
     case "ipta":
       return <Shield className="h-5 w-5" />;
@@ -109,9 +109,7 @@ const RecommendationDisplay = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <Badge variant="secondary" className="text-base px-4 py-2">
-              {analysis.riskProfile}
-            </Badge>
+            <div />
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Prêmio Total Estimado</p>
               <p className="text-2xl font-bold text-primary">
