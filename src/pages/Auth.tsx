@@ -85,23 +85,6 @@ const Auth = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      toast({ title: 'Erro no login com Google', description: error.message, variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-primary/5 p-4">
       <div className="w-full max-w-md">
@@ -135,12 +118,7 @@ const Auth = () => {
               </TabsList>
               
               <TabsContent value="signin">
-                <div className="space-y-4">
-                  <Button onClick={handleGoogleSignIn} variant="secondary" className="w-full" disabled={loading}>
-                    Entrar com Google
-                  </Button>
-                  <div className="text-center text-xs text-muted-foreground">ou</div>
-                  <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <Input
@@ -173,16 +151,10 @@ const Auth = () => {
                       {loading ? "Entrando..." : "Entrar"}
                     </Button>
                   </form>
-                </div>
               </TabsContent>
               
               <TabsContent value="signup">
-                <div className="space-y-4">
-                  <Button onClick={handleGoogleSignIn} variant="secondary" className="w-full" disabled={loading}>
-                    Cadastrar com Google
-                  </Button>
-                  <div className="text-center text-xs text-muted-foreground">ou</div>
-                  <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="fullName">Nome Completo</Label>
                       <Input
@@ -226,7 +198,6 @@ const Auth = () => {
                       {loading ? "Cadastrando..." : "Criar Conta"}
                     </Button>
                   </form>
-                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
