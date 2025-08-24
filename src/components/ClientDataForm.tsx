@@ -19,6 +19,15 @@ export interface ClientData {
   currentDebts: number;
   healthStatus: string;
   existingInsurance: boolean;
+  // Novos campos para análise mais completa
+  patrimonio?: number;
+  despesasMensais?: number;
+  reservasFinanceiras?: number;
+  estadoCivil?: string;
+  fumante?: boolean;
+  praticaEsportesRisco?: boolean;
+  condicoesMedicasPreExistentes?: string[];
+  historicoDoencasGravesFamilia?: boolean;
 }
 
 interface ClientDataFormProps {

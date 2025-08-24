@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Session } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
+import { insuranceCalculator } from "@/services/insuranceCalculator";
 import { 
   Mic, 
   Edit, 
@@ -65,58 +66,7 @@ const Index = () => {
   };
 
   const generateMockAnalysis = (clientData: ClientData): ClientAnalysis => {
-    const baseAmount = clientData.monthlyIncome * 120; // 10 years of income
-    const dependentsFactor = clientData.hasDependents ? 1.5 : 1;
-    const ageFactor = clientData.age > 45 ? 1.2 : 1;
-    const healthFactor = clientData.healthStatus === "precario" ? 1.4 : 
-                        clientData.healthStatus === "regular" ? 1.2 : 1;
-    
-    const totalMultiplier = dependentsFactor * ageFactor * healthFactor;
-    
-    return {
-      clientName: clientData.name,
-      riskProfile: clientData.age > 50 || clientData.healthStatus === "precario" ? 
-                   "Alto Risco" : clientData.age > 35 ? "Risco Médio" : "Perfil Adequado",
-      recommendedCoverages: [
-        {
-          type: "Morte",
-          amount: baseAmount * totalMultiplier,
-          premium: (baseAmount * totalMultiplier) * 0.002,
-          justification: `Com base na sua renda mensal de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.monthlyIncome)} e ${clientData.hasDependents ? `${clientData.dependentsCount} dependente(s)` : 'sem dependentes'}, recomendamos uma cobertura que garanta a segurança financeira ${clientData.hasDependents ? 'da família' : 'pessoal'} por pelo menos 10 anos.`,
-          priority: "high"
-        },
-        {
-          type: "Invalidez Permanente (IPTA)",
-          amount: baseAmount * 0.8 * totalMultiplier,
-          premium: (baseAmount * 0.8 * totalMultiplier) * 0.0015,
-          justification: `Como ${clientData.profession.toLowerCase()}, existe o risco de acidentes que podem causar invalidez. Esta cobertura garante recursos para adaptação e manutenção do padrão de vida.`,
-          priority: "high"
-        },
-        {
-          type: "Doenças Graves",
-          amount: clientData.monthlyIncome * 60,
-          premium: (clientData.monthlyIncome * 60) * 0.003,
-          justification: `O tratamento de doenças graves pode ser custoso. Esta cobertura oferece recursos imediatos para tratamento e recuperação, considerando seu perfil de saúde ${clientData.healthStatus}.`,
-          priority: clientData.healthStatus !== "excelente" ? "high" : "medium"
-        },
-        {
-          type: "Diária por Incapacidade (DIT)",
-          amount: clientData.monthlyIncome * 0.03 * 30, // 3% da renda por dia, 30 dias
-          premium: clientData.monthlyIncome * 0.0008,
-          justification: "Oferece renda diária durante período de afastamento por doença ou acidente, mantendo a estabilidade financeira durante a recuperação.",
-          priority: "medium"
-        },
-        {
-          type: "Funeral",
-          amount: 15000,
-          premium: 12,
-          justification: "Cobertura para despesas de funeral, evitando gastos inesperados para a família em momento difícil.",
-          priority: "low"
-        }
-      ],
-      totalPremium: 0,
-      summary: `Baseado no perfil de ${clientData.name}, ${clientData.age} anos, ${clientData.profession.toLowerCase()}, com renda mensal de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.monthlyIncome)}, recomendamos um conjunto de coberturas que oferece proteção abrangente. ${clientData.hasDependents ? `Com ${clientData.dependentsCount} dependente(s), priorizamos coberturas que garantam a segurança financeira da família.` : 'Focamos em coberturas que protegem sua estabilidade financeira pessoal.'} O perfil foi avaliado considerando idade, profissão e estado de saúde.`
-    };
+    return insuranceCalculator.calculateInsuranceRecommendations(clientData);
   };
 
   const handleFormSubmit = async (clientData: ClientData) => {
@@ -126,9 +76,6 @@ const Index = () => {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     const analysisResult = generateMockAnalysis(clientData);
-    analysisResult.totalPremium = analysisResult.recommendedCoverages.reduce(
-      (total, coverage) => total + coverage.premium, 0
-    );
     
     setAnalysis(analysisResult);
     setInputMode("results");

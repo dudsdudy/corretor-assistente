@@ -7,17 +7,23 @@ import { Shield, FileText, Download, TrendingUp, Heart, Briefcase, Home } from "
 export interface CoverageRecommendation {
   type: string;
   amount: number;
-  premium: number;
   justification: string;
   priority: "high" | "medium" | "low";
+  riskFactors: string[];
+  calculationBasis: string;
 }
 
 export interface ClientAnalysis {
   clientName: string;
   riskProfile: string;
   recommendedCoverages: CoverageRecommendation[];
-  totalPremium: number;
   summary: string;
+  analysisDetails: {
+    ageRiskFactor: number;
+    healthRiskFactor: number;
+    professionRiskFactor: number;
+    dependentsImpact: number;
+  };
 }
 
 interface RecommendationDisplayProps {
@@ -108,13 +114,32 @@ const RecommendationDisplay = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div />
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Prêmio Total Estimado</p>
-              <p className="text-2xl font-bold text-primary">
-                {formatCurrency(analysis.totalPremium)}/mês
-              </p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-muted/30 rounded-lg">
+                <p className="text-xs text-muted-foreground">Fator Idade</p>
+                <p className="text-lg font-bold text-primary">
+                  {(analysis.analysisDetails.ageRiskFactor * 100).toFixed(0)}%
+                </p>
+              </div>
+              <div className="text-center p-3 bg-muted/30 rounded-lg">
+                <p className="text-xs text-muted-foreground">Fator Saúde</p>
+                <p className="text-lg font-bold text-primary">
+                  {(analysis.analysisDetails.healthRiskFactor * 100).toFixed(0)}%
+                </p>
+              </div>
+              <div className="text-center p-3 bg-muted/30 rounded-lg">
+                <p className="text-xs text-muted-foreground">Profissão</p>
+                <p className="text-lg font-bold text-primary">
+                  {(analysis.analysisDetails.professionRiskFactor * 100).toFixed(0)}%
+                </p>
+              </div>
+              <div className="text-center p-3 bg-muted/30 rounded-lg">
+                <p className="text-xs text-muted-foreground">Dependentes</p>
+                <p className="text-lg font-bold text-primary">
+                  +{(analysis.analysisDetails.dependentsImpact * 100).toFixed(0)}%
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -147,18 +172,30 @@ const RecommendationDisplay = ({
                     {formatCurrency(coverage.amount)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {formatCurrency(coverage.premium)}/mês
+                    {coverage.calculationBasis}
                   </p>
                 </div>
               </div>
               
               <Separator className="my-4" />
               
-              <div className="bg-muted/30 p-4 rounded-lg">
-                <h5 className="font-medium mb-2 text-primary">Por que recomendamos:</h5>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {coverage.justification}
-                </p>
+              <div className="bg-muted/30 p-4 rounded-lg space-y-3">
+                <div>
+                  <h5 className="font-medium mb-2 text-primary">Por que recomendamos:</h5>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {coverage.justification}
+                  </p>
+                </div>
+                <div>
+                  <h5 className="font-medium mb-2 text-primary">Fatores de risco considerados:</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {coverage.riskFactors.map((factor, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {factor}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
