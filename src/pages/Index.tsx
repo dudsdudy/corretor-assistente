@@ -447,7 +447,7 @@ const Index = () => {
         <FreeTrialBlockedModal 
           open={showUpgradeModal}
           onOpenChange={setShowUpgradeModal}
-          onUpgrade={handleUpgradeRedirect}
+          user={user}
         />
       </main>
     </div>

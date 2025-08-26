@@ -9,6 +9,8 @@ interface FreeTrialStatus {
   canCreateStudy: boolean;
   isPremium: boolean;
   loading: boolean;
+  subscriptionTier?: string | null;
+  subscriptionEnd?: string | null;
 }
 
 export const useFreeTrial = (user: User | null) => {
@@ -18,7 +20,9 @@ export const useFreeTrial = (user: User | null) => {
     studiesLimit: 3,
     canCreateStudy: true,
     isPremium: false,
-    loading: true
+    loading: true,
+    subscriptionTier: null,
+    subscriptionEnd: null
   });
 
   const fetchFreeTrialStatus = async () => {
@@ -30,7 +34,7 @@ export const useFreeTrial = (user: User | null) => {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('free_studies_used, free_studies_limit, is_premium, subscription_status')
+        .select('free_studies_used, free_studies_limit, is_premium, subscription_status, subscription_plan')
         .eq('user_id', user.id)
         .single();
 
@@ -48,7 +52,9 @@ export const useFreeTrial = (user: User | null) => {
           studiesLimit,
           canCreateStudy,
           isPremium: profile.is_premium || false,
-          loading: false
+          loading: false,
+          subscriptionTier: profile.subscription_plan,
+          subscriptionEnd: null
         });
       }
     } catch (error) {
@@ -76,7 +82,9 @@ export const useFreeTrial = (user: User | null) => {
           studiesLimit: freeTrialStatus.studiesLimit,
           canCreateStudy: !result.limit_reached || freeTrialStatus.isPremium,
           isPremium: freeTrialStatus.isPremium,
-          loading: false
+          loading: false,
+          subscriptionTier: freeTrialStatus.subscriptionTier,
+          subscriptionEnd: freeTrialStatus.subscriptionEnd
         };
 
         setFreeTrialStatus(updatedStatus);
@@ -123,10 +131,64 @@ export const useFreeTrial = (user: User | null) => {
     fetchFreeTrialStatus();
   }, [user]);
 
+  const checkSubscriptionStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      
+      if (error) throw error;
+      
+      if (data) {
+        setFreeTrialStatus(prev => ({
+          ...prev,
+          isPremium: data.subscribed || false,
+          subscriptionTier: data.subscription_tier,
+          subscriptionEnd: data.subscription_end
+        }));
+      }
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+    }
+  };
+
+  const createCheckout = async () => {
+    if (!user) return null;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout');
+      
+      if (error) throw error;
+      
+      return data?.url;
+    } catch (error) {
+      console.error("Error creating checkout:", error);
+      return null;
+    }
+  };
+
+  const openCustomerPortal = async () => {
+    if (!user) return null;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) throw error;
+      
+      return data?.url;
+    } catch (error) {
+      console.error("Error opening customer portal:", error);
+      return null;
+    }
+  };
+
   return {
     ...freeTrialStatus,
     incrementStudyCount,
     triggerWebhookEvent,
-    refreshStatus: fetchFreeTrialStatus
+    refreshStatus: fetchFreeTrialStatus,
+    checkSubscriptionStatus,
+    createCheckout,
+    openCustomerPortal
   };
 };

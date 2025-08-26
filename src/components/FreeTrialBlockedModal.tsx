@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,15 +9,49 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Crown, CheckCircle, Zap, Shield } from "lucide-react";
+import { Crown, CheckCircle, Zap, Shield, Loader2 } from "lucide-react";
+import { useFreeTrial } from "@/hooks/useFreeTrial";
+import { User } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 
 interface FreeTrialBlockedModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpgrade: () => void;
+  user: User | null;
 }
 
-const FreeTrialBlockedModal = ({ open, onOpenChange, onUpgrade }: FreeTrialBlockedModalProps) => {
+const FreeTrialBlockedModal = ({ open, onOpenChange, user }: FreeTrialBlockedModalProps) => {
+  const { createCheckout } = useFreeTrial(user);
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+
+  const onUpgrade = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const checkoutUrl = await createCheckout();
+      if (checkoutUrl) {
+        // Open Stripe checkout in a new tab
+        window.open(checkoutUrl, '_blank');
+        onOpenChange(false); // Close modal after opening checkout
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar a sessão de pagamento",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar sessão de pagamento",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -89,10 +124,15 @@ const FreeTrialBlockedModal = ({ open, onOpenChange, onUpgrade }: FreeTrialBlock
           </Button>
           <Button 
             onClick={onUpgrade}
+            disabled={loading}
             className="bg-gradient-primary text-primary-foreground hover:opacity-90"
           >
-            <Crown className="h-4 w-4 mr-2" />
-            Ver Planos Premium
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Crown className="h-4 w-4 mr-2" />
+            )}
+            Fazer Upgrade - R$ 49,99/mês
           </Button>
         </DialogFooter>
       </DialogContent>
