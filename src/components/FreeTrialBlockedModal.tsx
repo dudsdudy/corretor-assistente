@@ -56,15 +56,18 @@ const FreeTrialBlockedModal = ({ open, onOpenChange, user }: FreeTrialBlockedMod
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader className="text-center space-y-4">
-          <div className="mx-auto p-3 bg-gradient-primary rounded-full w-fit">
+          <div className="mx-auto p-3 bg-gradient-primary rounded-full w-fit animate-pulse">
             <Crown className="h-8 w-8 text-primary-foreground" />
           </div>
-          <DialogTitle className="text-2xl">
-            Seus 3 estudos gratuitos acabaram!
+          <DialogTitle className="text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            🚀 TRANSFORME SUA CARREIRA AGORA!
           </DialogTitle>
           <DialogDescription className="text-base">
-            Você utilizou todos os estudos do seu teste grátis. Continue gerando 
-            recomendações profissionais e impulsionando suas vendas com um plano premium.
+            <span className="text-lg font-semibold text-foreground">Você provou que funciona!</span>
+            <br />
+            Seus primeiros estudos mostraram o poder da nossa metodologia.
+            <br />
+            <span className="text-primary font-medium">Continue dominando o mercado com o plano PRO!</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -100,22 +103,27 @@ const FreeTrialBlockedModal = ({ open, onOpenChange, user }: FreeTrialBlockedMod
           </Card>
         </div>
 
-        <div className="bg-muted/50 rounded-lg p-4">
-          <h5 className="font-semibold mb-2">🎯 O que você já conquistou:</h5>
-          <ul className="space-y-1 text-sm">
+        <div className="bg-gradient-to-r from-success/10 to-accent/10 rounded-lg p-4 border-l-4 border-success">
+          <h5 className="font-semibold mb-3 text-success">💰 RESULTADOS COMPROVADOS EM APENAS 3 ESTUDOS:</h5>
+          <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />
-              Experimentou a metodologia profissional de cálculo
+              <span className="font-medium">+300% mais profissional</span> que uma apresentação básica
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />
-              Gerou estudos com qualidade de corretora especializada
+              <span className="font-medium">Clientes impressionados</span> com a qualidade técnica
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />
-              Viu como otimizar suas apresentações para clientes
+              <span className="font-medium">Método que fecha mais vendas</span> comprovadamente
             </li>
           </ul>
+          <div className="mt-3 p-2 bg-accent/20 rounded text-center">
+            <p className="text-sm font-semibold text-accent">
+              🔥 Imagine o que você fará com ESTUDOS ILIMITADOS!
+            </p>
+          </div>
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -125,14 +133,14 @@ const FreeTrialBlockedModal = ({ open, onOpenChange, user }: FreeTrialBlockedMod
           <Button 
             onClick={onUpgrade}
             disabled={loading}
-            className="bg-gradient-primary text-primary-foreground hover:opacity-90"
+            className="bg-gradient-to-r from-success to-accent text-white hover:scale-105 transition-transform shadow-strong font-semibold text-lg px-8 py-6"
           >
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
             ) : (
-              <Crown className="h-4 w-4 mr-2" />
+              <Crown className="h-5 w-5 mr-2" />
             )}
-            Fazer Upgrade - R$ 49,99/mês
+            🚀 EXPLODIR DE VENDER - R$ 49,99/mês
           </Button>
         </DialogFooter>
       </DialogContent>

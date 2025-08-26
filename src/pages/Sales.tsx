@@ -11,7 +11,8 @@ import {
   Plus,
   ArrowRight,
   Calendar,
-  DollarSign
+  DollarSign,
+  Download
 } from "lucide-react";
 import { User } from '@supabase/supabase-js';
 
@@ -228,7 +229,7 @@ const Sales = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {columnAnalyses.map((analysis) => (
+                  {columnAnalyses.slice(0, 5).map((analysis) => (
                     <Card 
                       key={analysis.id} 
                       className={`bg-background shadow-sm hover:shadow-md transition-shadow cursor-move ${
@@ -241,27 +242,46 @@ const Sales = () => {
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-sm font-medium">{analysis.client_name}</CardTitle>
-                          {column.id !== 'fechado' && column.id !== 'perdido' && (
+                          <div className="flex gap-1">
+                            {/* Download Button */}
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                const statusFlow: Record<string, string> = {
-                                  'novo': 'contato',
-                                  'contato': 'proposta',
-                                  'proposta': 'negociacao',
-                                  'negociacao': 'fechado'
-                                };
-                                const nextStatus = statusFlow[analysis.status];
-                                if (nextStatus) {
-                                  moveToStatus(analysis.id, nextStatus);
-                                }
+                                toast({
+                                  title: "Download do Estudo",
+                                  description: "Funcionalidade em desenvolvimento",
+                                });
                               }}
                               className="h-6 w-6 p-0"
+                              title="Baixar estudo"
                             >
-                              <ArrowRight className="h-3 w-3" />
+                              <Download className="h-3 w-3" />
                             </Button>
-                          )}
+                            
+                            {/* Next Status Button */}
+                            {column.id !== 'fechado' && column.id !== 'perdido' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const statusFlow: Record<string, string> = {
+                                    'novo': 'contato',
+                                    'contato': 'proposta',
+                                    'proposta': 'negociacao',
+                                    'negociacao': 'fechado'
+                                  };
+                                  const nextStatus = statusFlow[analysis.status];
+                                  if (nextStatus) {
+                                    moveToStatus(analysis.id, nextStatus);
+                                  }
+                                }}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ArrowRight className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
@@ -292,6 +312,15 @@ const Sales = () => {
                       </CardContent>
                     </Card>
                   ))}
+                  
+                  {/* Show "Load More" if there are more than 5 items */}
+                  {columnAnalyses.length > 5 && (
+                    <div className="text-center py-2">
+                      <Badge variant="secondary" className="text-xs">
+                        +{columnAnalyses.length - 5} mais lead{columnAnalyses.length - 5 > 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                  )}
                   
                   {columnAnalyses.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-muted-foreground/20 rounded-lg">

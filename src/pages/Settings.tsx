@@ -21,9 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const Settings = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [companyType, setCompanyType] = useState("");
   const [reminderDays, setReminderDays] = useState("3");
+  const [logoUrl, setLogoUrl] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -42,6 +44,7 @@ const Settings = () => {
         
         if (profile) {
           setCompanyName(profile.full_name || "");
+          setLogoUrl(profile.avatar_url || "");
         }
       }
       setLoading(false);
@@ -52,11 +55,13 @@ const Settings = () => {
   const handleSaveSettings = async () => {
     if (!user) return;
 
+    setSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: companyName,
+          avatar_url: logoUrl,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id);
@@ -70,6 +75,53 @@ const Settings = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao salvar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O arquivo deve ter no máximo 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}_logo.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      setLogoUrl(publicUrl);
+      
+      toast({
+        title: "Logo carregado",
+        description: "Sua logo foi carregada com sucesso. Salve as configurações para confirmar.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro no upload",
         description: error.message,
         variant: "destructive",
       });
@@ -172,7 +224,18 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label>Logo da Corretora</Label>
                 <div className="flex items-center gap-4">
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    id="logo-upload"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={() => document.getElementById('logo-upload')?.click()}
+                  >
                     <Upload className="h-4 w-4" />
                     Fazer Upload
                   </Button>
@@ -180,6 +243,15 @@ const Settings = () => {
                     Formatos aceitos: PNG, JPG (máx. 2MB)
                   </p>
                 </div>
+                {logoUrl && (
+                  <div className="mt-2">
+                    <img 
+                      src={logoUrl} 
+                      alt="Logo da corretora" 
+                      className="h-16 w-auto border rounded-lg"
+                    />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -222,8 +294,12 @@ const Settings = () => {
 
           {/* Save Button */}
           <div className="flex justify-end">
-            <Button onClick={handleSaveSettings} className="flex items-center gap-2">
-              Salvar Configurações
+            <Button 
+              onClick={handleSaveSettings} 
+              disabled={saving}
+              className="flex items-center gap-2"
+            >
+              {saving ? "Salvando..." : "Salvar Configurações"}
             </Button>
           </div>
         </div>

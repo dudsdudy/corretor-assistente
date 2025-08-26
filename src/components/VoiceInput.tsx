@@ -131,9 +131,10 @@ const VoiceInput = ({ onTranscript, loading = false }: VoiceInputProps) => {
           </div>
 
           {isRecording && (
-            <p className="text-sm text-muted-foreground text-center animate-pulse">
-              🎤 Gravando... Fale sobre idade, profissão, renda, dependentes e saúde do cliente
-            </p>
+            <div className="text-sm text-muted-foreground text-center animate-pulse space-y-1">
+              <p>🎤 Gravando... Fale pausadamente:</p>
+              <p className="text-xs">Ex: "Cliente João Silva, 35 anos, trabalha como médico, ganha 15 mil reais, tem dois filhos, saúde excelente"</p>
+            </div>
           )}
         </div>
 
@@ -146,10 +147,18 @@ const VoiceInput = ({ onTranscript, loading = false }: VoiceInputProps) => {
           </div>
         )}
 
-        <div className="text-xs text-muted-foreground text-center space-y-1">
-          <p>💡 <strong>Dica:</strong> Mencione idade, sexo, profissão, renda mensal, dependentes, dívidas e estado de saúde</p>
-          <p>🎤 <strong>Transcrição Automática:</strong> Powered by OpenAI Whisper</p>
-        </div>
+          <div className="text-xs text-muted-foreground text-center space-y-1">
+            <p>💡 <strong>Dica para melhor reconhecimento:</strong> Fale pausadamente e mencione:</p>
+            <ul className="text-left mt-2 space-y-1">
+              <li>• <strong>Nome completo:</strong> "João da Silva"</li>
+              <li>• <strong>Idade:</strong> "32 anos" ou "trinta e dois anos"</li>
+              <li>• <strong>Profissão:</strong> "trabalha como engenheiro" ou "é médico"</li>
+              <li>• <strong>Renda:</strong> "ganha 5 mil reais" ou "renda de R$ 5.000"</li>
+              <li>• <strong>Dependentes:</strong> "tem 2 filhos" ou "possui dependentes"</li>
+              <li>• <strong>Saúde:</strong> "saúde boa" ou "tem problemas de saúde"</li>
+            </ul>
+            <p className="mt-2">🎤 <strong>Transcrição Automática:</strong> Powered by OpenAI Whisper</p>
+          </div>
       </CardContent>
     </Card>
   );

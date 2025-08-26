@@ -34,14 +34,31 @@ const NotificationBadge = () => {
   if (untreatedLeads === 0) return null;
 
   return (
-    <div className="relative">
-      <Bell className="h-5 w-5 text-warning" />
-      <Badge 
-        variant="destructive" 
-        className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
-      >
-        {untreatedLeads > 9 ? "9+" : untreatedLeads}
-      </Badge>
+    <div className="relative group">
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-warning/10 border border-warning/20">
+        <Bell className="h-5 w-5 text-warning" />
+        <span className="text-sm font-medium text-warning">
+          {untreatedLeads} lead{untreatedLeads > 1 ? 's' : ''} necessita{untreatedLeads > 1 ? 'm' : ''} atenção
+        </span>
+        <Badge 
+          variant="destructive" 
+          className="h-5 w-5 p-0 flex items-center justify-center text-xs"
+        >
+          {untreatedLeads > 9 ? "9+" : untreatedLeads}
+        </Badge>
+      </div>
+      
+      {/* Tooltip */}
+      <div className="absolute top-full left-0 mt-2 w-64 p-3 bg-popover text-popover-foreground border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
+        <p className="text-sm font-medium mb-1">Leads que precisam de atenção:</p>
+        <p className="text-xs text-muted-foreground">
+          • Novos leads sem contato
+          <br />
+          • Leads parados há mais de 3 dias
+          <br />
+          • Vá para "Gestão de Vendas" para visualizar
+        </p>
+      </div>
     </div>
   );
 };

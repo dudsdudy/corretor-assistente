@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Calculator } from "lucide-react";
+import ProfessionAutocomplete from "./ProfessionAutocomplete";
 
 export interface ClientData {
   name: string;
@@ -124,16 +125,11 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                 </div>
               </RadioGroup>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="profession">Profissão</Label>
-              <Input
-                id="profession"
-                value={formData.profession}
-                onChange={(e) => handleInputChange("profession", e.target.value)}
-                placeholder="Ex: Engenheiro, Médico, Empresário"
-                required
-              />
-            </div>
+            <ProfessionAutocomplete
+              value={formData.profession}
+              onChange={(value) => handleInputChange("profession", value)}
+              required
+            />
           </div>
 
           {/* Financial Information */}
@@ -330,15 +326,46 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
             </div>
 
             {formData.existingInsurance && (
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <div className="space-y-2">
-                  <Label htmlFor="coberturasExistentes">Coberturas Existentes</Label>
-                  <Input
-                    id="coberturasExistentes"
-                    value={formData.coberturasExistentes || ""}
-                    onChange={(e) => handleInputChange("coberturasExistentes", e.target.value)}
-                    placeholder="Ex: Morte, IPTA, DG"
-                  />
+              <div className="space-y-4 mb-4">
+                <div>
+                  <Label className="text-base font-medium">Coberturas Existentes (marque as que possui):</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+                    {[
+                      { key: "morte", label: "Morte" },
+                      { key: "ipta", label: "IPTA (invalidez)" },
+                      { key: "dg", label: "Doenças Graves" },
+                      { key: "dit", label: "Diárias" },
+                      { key: "funeral", label: "Auxílio Funeral" },
+                      { key: "dmh", label: "DMH" }
+                    ].map((coverage) => (
+                      <div key={coverage.key} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`coverage-${coverage.key}`}
+                          checked={(formData.coberturasExistentes || "").includes(coverage.key)}
+                          onCheckedChange={(checked) => {
+                            const existingCoverages = formData.coberturasExistentes || "";
+                            const coveragesArray = existingCoverages.split(",").filter(c => c.trim());
+                            
+                            if (checked) {
+                              if (!coveragesArray.includes(coverage.key)) {
+                                coveragesArray.push(coverage.key);
+                              }
+                            } else {
+                              const index = coveragesArray.indexOf(coverage.key);
+                              if (index > -1) {
+                                coveragesArray.splice(index, 1);
+                              }
+                            }
+                            
+                            handleInputChange("coberturasExistentes", coveragesArray.join(","));
+                          }}
+                        />
+                        <Label htmlFor={`coverage-${coverage.key}`} className="text-sm">
+                          {coverage.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="premioSeguroExistente">Prêmio Atual (R$/mês)</Label>
