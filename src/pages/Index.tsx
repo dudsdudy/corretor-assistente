@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Session } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
+import { useFreeTrial } from "@/hooks/useFreeTrial";
 import { insuranceCalculator } from "@/services/insuranceCalculator";
 import { 
   Mic, 
@@ -18,6 +19,8 @@ import {
   FileBarChart
 } from "lucide-react";
 import NotificationBadge from "@/components/NotificationBadge";
+import FreeTrialCounter from "@/components/FreeTrialCounter";
+import FreeTrialBlockedModal from "@/components/FreeTrialBlockedModal";
 import heroImage from "@/assets/hero-insurance.jpg";
 import ClientDataForm, { ClientData } from "@/components/ClientDataForm";
 import VoiceInput from "@/components/VoiceInput";
@@ -32,8 +35,12 @@ const Index = () => {
   const [inputMode, setInputMode] = useState<"choice" | "voice" | "form" | "results">("choice");
   const [analysis, setAnalysis] = useState<ClientAnalysis | null>(null);
   const [processingAnalysis, setProcessingAnalysis] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Free trial hook
+  const freeTrialStatus = useFreeTrial(user);
 
   useEffect(() => {
     // Set up auth state listener
@@ -71,12 +78,26 @@ const Index = () => {
   };
 
   const handleFormSubmit = async (clientData: ClientData) => {
+    // Check if user can create more studies
+    if (!freeTrialStatus.canCreateStudy) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setProcessingAnalysis(true);
     
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     const analysisResult = generateMockAnalysis(clientData);
+    
+    // Increment study count
+    const canContinue = await freeTrialStatus.incrementStudyCount();
+    
+    if (!canContinue && !freeTrialStatus.isPremium) {
+      // This will trigger the upgrade modal after showing results
+      setTimeout(() => setShowUpgradeModal(true), 3000);
+    }
     
     setAnalysis(analysisResult);
     setInputMode("results");
@@ -182,6 +203,21 @@ const Index = () => {
   const resetToChoice = () => {
     setInputMode("choice");
     setAnalysis(null);
+    setShowUpgradeModal(false);
+  };
+
+  const handleUpgradeRedirect = () => {
+    // TODO: Redirect to plans landing page
+    window.open("https://example.com/plans", "_blank");
+    setShowUpgradeModal(false);
+  };
+
+  const handleStartNewStudy = () => {
+    if (!freeTrialStatus.canCreateStudy) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setInputMode("choice");
   };
 
   if (loading) {
@@ -235,6 +271,19 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         {inputMode === "choice" && (
           <div className="max-w-4xl mx-auto space-y-8">
+            {/* Free Trial Status */}
+            {!freeTrialStatus.isPremium && (
+              <div className="flex justify-center">
+                <FreeTrialCounter 
+                  studiesUsed={freeTrialStatus.studiesUsed}
+                  studiesRemaining={freeTrialStatus.studiesRemaining}
+                  studiesLimit={freeTrialStatus.studiesLimit}
+                  isPremium={freeTrialStatus.isPremium}
+                  variant="detailed"
+                />
+              </div>
+            )}
+
             {/* Hero Section */}
             <div className="relative rounded-2xl overflow-hidden shadow-strong">
               <img 
@@ -270,8 +319,16 @@ const Index = () => {
 
             <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <Card 
-                className="cursor-pointer hover:shadow-glow transition-all duration-300 transform hover:scale-105 bg-gradient-card"
-                onClick={() => setInputMode("voice")}
+                className={`cursor-pointer hover:shadow-glow transition-all duration-300 transform hover:scale-105 bg-gradient-card ${
+                  !freeTrialStatus.canCreateStudy ? 'opacity-50' : ''
+                }`}
+                onClick={() => {
+                  if (!freeTrialStatus.canCreateStudy) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    setInputMode("voice");
+                  }
+                }}
               >
                 <CardHeader className="text-center">
                   <div className="mx-auto p-4 bg-gradient-primary rounded-full w-fit mb-4">
@@ -291,8 +348,16 @@ const Index = () => {
               </Card>
 
               <Card 
-                className="cursor-pointer hover:shadow-glow transition-all duration-300 transform hover:scale-105 bg-gradient-card"
-                onClick={() => setInputMode("form")}
+                className={`cursor-pointer hover:shadow-glow transition-all duration-300 transform hover:scale-105 bg-gradient-card ${
+                  !freeTrialStatus.canCreateStudy ? 'opacity-50' : ''
+                }`}
+                onClick={() => {
+                  if (!freeTrialStatus.canCreateStudy) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    setInputMode("form");
+                  }
+                }}
               >
                 <CardHeader className="text-center">
                   <div className="mx-auto p-4 bg-gradient-success rounded-full w-fit mb-4">
@@ -351,13 +416,21 @@ const Index = () => {
             <div className="flex items-center justify-between">
               <Button 
                 variant="ghost" 
-                onClick={resetToChoice}
+                onClick={handleStartNewStudy}
               >
                 ← Nova Análise
               </Button>
-              <div className="flex items-center gap-2">
-                <FileBarChart className="h-5 w-5 text-success" />
-                <span className="text-sm font-medium text-success">Análise Concluída</span>
+              <div className="flex items-center gap-4">
+                <FreeTrialCounter 
+                  studiesUsed={freeTrialStatus.studiesUsed}
+                  studiesRemaining={freeTrialStatus.studiesRemaining}
+                  studiesLimit={freeTrialStatus.studiesLimit}
+                  isPremium={freeTrialStatus.isPremium}
+                />
+                <div className="flex items-center gap-2">
+                  <FileBarChart className="h-5 w-5 text-success" />
+                  <span className="text-sm font-medium text-success">Análise Concluída</span>
+                </div>
               </div>
             </div>
             <div id="proposal-content">
@@ -369,6 +442,13 @@ const Index = () => {
             </div>
           </div>
         )}
+
+        {/* Free Trial Blocked Modal */}
+        <FreeTrialBlockedModal 
+          open={showUpgradeModal}
+          onOpenChange={setShowUpgradeModal}
+          onUpgrade={handleUpgradeRedirect}
+        />
       </main>
     </div>
   );
