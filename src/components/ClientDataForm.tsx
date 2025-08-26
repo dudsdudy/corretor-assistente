@@ -28,6 +28,12 @@ export interface ClientData {
   praticaEsportesRisco?: boolean;
   condicoesMedicasPreExistentes?: string[];
   historicoDoencasGravesFamilia?: boolean;
+  // Campos para seguros/investimentos existentes
+  coberturasExistentes?: string;
+  premioSeguroExistente?: number;
+  valorInvestimento?: number;
+  // Campo para corretor parceiro
+  corretorParceiro?: string;
 }
 
 interface ClientDataFormProps {
@@ -217,14 +223,163 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
             </Select>
           </div>
 
+          {/* Additional Information */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">Informações Adicionais</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Estado Civil</Label>
+                <Select
+                  value={formData.estadoCivil || ""}
+                  onValueChange={(value) => handleInputChange("estadoCivil", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                    <SelectItem value="casado">Casado(a)</SelectItem>
+                    <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                    <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                    <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="patrimonio">Patrimônio Total (R$)</Label>
+                <Input
+                  id="patrimonio"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.patrimonio || ""}
+                  onChange={(e) => handleInputChange("patrimonio", parseFloat(e.target.value) || 0)}
+                  placeholder="100000.00"
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="despesasMensais">Despesas Mensais (R$)</Label>
+                <Input
+                  id="despesasMensais"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.despesasMensais || ""}
+                  onChange={(e) => handleInputChange("despesasMensais", parseFloat(e.target.value) || 0)}
+                  placeholder="3000.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reservasFinanceiras">Reservas de Emergência (R$)</Label>
+                <Input
+                  id="reservasFinanceiras"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.reservasFinanceiras || ""}
+                  onChange={(e) => handleInputChange("reservasFinanceiras", parseFloat(e.target.value) || 0)}
+                  placeholder="10000.00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="fumante"
+                  checked={formData.fumante || false}
+                  onCheckedChange={(checked) => handleInputChange("fumante", checked)}
+                />
+                <Label htmlFor="fumante">É fumante</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="praticaEsportesRisco"
+                  checked={formData.praticaEsportesRisco || false}
+                  onCheckedChange={(checked) => handleInputChange("praticaEsportesRisco", checked)}
+                />
+                <Label htmlFor="praticaEsportesRisco">Pratica esportes de risco</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="historicoDoencasGravesFamilia"
+                  checked={formData.historicoDoencasGravesFamilia || false}
+                  onCheckedChange={(checked) => handleInputChange("historicoDoencasGravesFamilia", checked)}
+                />
+                <Label htmlFor="historicoDoencasGravesFamilia">Histórico familiar de doenças graves</Label>
+              </div>
+            </div>
+          </div>
+
           {/* Existing Insurance */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="existingInsurance"
-              checked={formData.existingInsurance}
-              onCheckedChange={(checked) => handleInputChange("existingInsurance", checked)}
-            />
-            <Label htmlFor="existingInsurance">Já possui seguro de vida</Label>
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">Seguros e Investimentos Existentes</h3>
+            
+            <div className="flex items-center space-x-2 mb-4">
+              <Checkbox
+                id="existingInsurance"
+                checked={formData.existingInsurance}
+                onCheckedChange={(checked) => handleInputChange("existingInsurance", checked)}
+              />
+              <Label htmlFor="existingInsurance">Já possui seguro de vida</Label>
+            </div>
+
+            {formData.existingInsurance && (
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label htmlFor="coberturasExistentes">Coberturas Existentes</Label>
+                  <Input
+                    id="coberturasExistentes"
+                    value={formData.coberturasExistentes || ""}
+                    onChange={(e) => handleInputChange("coberturasExistentes", e.target.value)}
+                    placeholder="Ex: Morte, IPTA, DG"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="premioSeguroExistente">Prêmio Atual (R$/mês)</Label>
+                  <Input
+                    id="premioSeguroExistente"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.premioSeguroExistente || ""}
+                    onChange={(e) => handleInputChange("premioSeguroExistente", parseFloat(e.target.value) || 0)}
+                    placeholder="150.00"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="valorInvestimento">Investimentos Atuais (R$)</Label>
+              <Input
+                id="valorInvestimento"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.valorInvestimento || ""}
+                onChange={(e) => handleInputChange("valorInvestimento", parseFloat(e.target.value) || 0)}
+                placeholder="50000.00"
+              />
+            </div>
+          </div>
+
+          {/* Corretor Parceiro */}
+          <div className="border-t pt-6">
+            <div className="space-y-2">
+              <Label htmlFor="corretorParceiro">Corretor Parceiro (opcional)</Label>
+              <Input
+                id="corretorParceiro"
+                value={formData.corretorParceiro || ""}
+                onChange={(e) => handleInputChange("corretorParceiro", e.target.value)}
+                placeholder="Nome e contato do corretor parceiro"
+              />
+            </div>
           </div>
 
           <Button

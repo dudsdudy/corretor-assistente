@@ -17,6 +17,7 @@ import {
   TrendingUp,
   FileBarChart
 } from "lucide-react";
+import NotificationBadge from "@/components/NotificationBadge";
 import heroImage from "@/assets/hero-insurance.jpg";
 import ClientDataForm, { ClientData } from "@/components/ClientDataForm";
 import VoiceInput from "@/components/VoiceInput";
@@ -209,17 +210,18 @@ const Index = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
-              <Database className="h-4 w-4 mr-2" />
+            <Button variant="ghost" size="sm" onClick={() => navigate("/leads")} className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
               Painel de Leads
+              <NotificationBadge />
             </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/sales")}>
               <Kanban className="h-4 w-4 mr-2" />
               Gestão de Vendas
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => toast({ title: 'Personalizar', description: 'Opções de personalização em breve.' })}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/settings")}>
               <Settings className="h-4 w-4 mr-2" />
-              Personalizar
+              Configurações
             </Button>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />

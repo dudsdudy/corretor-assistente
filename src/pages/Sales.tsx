@@ -32,6 +32,7 @@ const Sales = () => {
   const [user, setUser] = useState<User | null>(null);
   const [analyses, setAnalyses] = useState<ClientAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -66,21 +67,11 @@ const Sales = () => {
     }
   };
 
-  const moveToNext = async (analysisId: string, currentStatus: string) => {
-    const statusFlow: Record<string, string> = {
-      'novo': 'contato',
-      'contato': 'proposta',
-      'proposta': 'negociacao',
-      'negociacao': 'fechado'
-    };
-
-    const nextStatus = statusFlow[currentStatus];
-    if (!nextStatus) return;
-
+  const moveToStatus = async (analysisId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('client_analyses')
-        .update({ status: nextStatus })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', analysisId);
 
       if (error) throw error;
@@ -88,14 +79,14 @@ const Sales = () => {
       setAnalyses(prev => 
         prev.map(analysis => 
           analysis.id === analysisId 
-            ? { ...analysis, status: nextStatus }
+            ? { ...analysis, status: newStatus, updated_at: new Date().toISOString() }
             : analysis
         )
       );
 
       toast({
         title: "Status atualizado",
-        description: `Lead movido para "${getStatusLabel(nextStatus)}"`,
+        description: `Lead movido para "${getStatusLabel(newStatus)}"`,
       });
     } catch (error: any) {
       toast({
@@ -104,6 +95,30 @@ const Sales = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleDragStart = (e: React.DragEvent, analysisId: string) => {
+    e.dataTransfer.setData("text/plain", analysisId);
+    setDraggedItem(analysisId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    const analysisId = e.dataTransfer.getData("text/plain");
+    if (analysisId && analysisId !== draggedItem) return;
+    
+    if (analysisId) {
+      moveToStatus(analysisId, newStatus);
+    }
+    setDraggedItem(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
   };
 
   const getStatusLabel = (status: string) => {
@@ -200,7 +215,12 @@ const Sales = () => {
             const columnAnalyses = analyses.filter(a => a.status === column.id);
             
             return (
-              <Card key={column.id} className={`${column.color} min-h-[500px]`}>
+              <Card 
+                key={column.id} 
+                className={`${column.color} min-h-[500px]`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, column.id)}
+              >
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center justify-between">
                     {column.title}
@@ -209,7 +229,15 @@ const Sales = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {columnAnalyses.map((analysis) => (
-                    <Card key={analysis.id} className="bg-background shadow-sm hover:shadow-md transition-shadow">
+                    <Card 
+                      key={analysis.id} 
+                      className={`bg-background shadow-sm hover:shadow-md transition-shadow cursor-move ${
+                        draggedItem === analysis.id ? 'opacity-50' : ''
+                      }`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, analysis.id)}
+                      onDragEnd={handleDragEnd}
+                    >
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-sm font-medium">{analysis.client_name}</CardTitle>
@@ -217,7 +245,18 @@ const Sales = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => moveToNext(analysis.id, analysis.status)}
+                              onClick={() => {
+                                const statusFlow: Record<string, string> = {
+                                  'novo': 'contato',
+                                  'contato': 'proposta',
+                                  'proposta': 'negociacao',
+                                  'negociacao': 'fechado'
+                                };
+                                const nextStatus = statusFlow[analysis.status];
+                                if (nextStatus) {
+                                  moveToStatus(analysis.id, nextStatus);
+                                }
+                              }}
                               className="h-6 w-6 p-0"
                             >
                               <ArrowRight className="h-3 w-3" />
@@ -255,8 +294,8 @@ const Sales = () => {
                   ))}
                   
                   {columnAnalyses.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p className="text-sm">Nenhum lead nesta etapa</p>
+                    <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                      <p className="text-sm">Arraste leads para esta coluna</p>
                     </div>
                   )}
                 </CardContent>

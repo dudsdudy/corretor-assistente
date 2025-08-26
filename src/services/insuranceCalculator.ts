@@ -76,38 +76,72 @@ export class InsuranceCalculatorService {
   }
 
   private calculateLifeInsurance(clientData: ClientData, riskFactors: any): CoverageRecommendation {
-    // Metodologia: Income Replacement + Débitos + Despesas Futuras
+    // Metodologia aprimorada: Income Replacement + Débitos + Despesas Futuras - Ativos Existentes
     const annualIncome = clientData.monthlyIncome * 12;
     
     // Período de substituição de renda (baseado na idade e dependentes)
-    const replacementYears = clientData.hasDependents ? 
-      Math.max(20 - (clientData.age - 30), 10) : 15;
+    let replacementYears = 15; // Base
+    if (clientData.hasDependents) {
+      replacementYears = Math.max(20 - Math.floor((clientData.age - 30) / 5), 12);
+    } else if (clientData.estadoCivil === 'casado' || clientData.estadoCivil === 'uniao_estavel') {
+      replacementYears = 12;
+    } else {
+      replacementYears = 8;
+    }
     
-    // Valor presente da renda futura (taxa de desconto simplificada de 4% a.a.)
+    // Valor presente da renda futura (taxa de desconto de 4% a.a.)
     const discountRate = 0.04;
     const presentValue = annualIncome * ((1 - Math.pow(1 + discountRate, -replacementYears)) / discountRate);
     
     // Despesas imediatas e futuras
-    const immediateExpenses = annualIncome * 0.1; // 10% da renda anual
+    const immediateExpenses = annualIncome * 0.15; // 15% da renda anual
     const futureCosts = clientData.hasDependents ? 
-      clientData.dependentsCount * 50000 : 0; // R$ 50k por dependente (educação/custos)
+      clientData.dependentsCount * 60000 : 0; // R$ 60k por dependente (educação/custos)
     
-    const totalAmount = presentValue + clientData.currentDebts + immediateExpenses + futureCosts;
+    // Considerar ativos existentes (reduzem a necessidade)
+    const existingAssets = (clientData.valorInvestimento || 0) + 
+                          (clientData.reservasFinanceiras || 0) * 0.8; // 80% das reservas
+    
+    // Ajustar por seguros existentes
+    let existingInsuranceAdjustment = 0;
+    if (clientData.existingInsurance && clientData.coberturasExistentes) {
+      // Estimativa conservadora baseada no prêmio pago
+      existingInsuranceAdjustment = (clientData.premioSeguroExistente || 0) * 100; // Estimativa grosseira
+    }
+    
+    const totalAmount = Math.max(100000, 
+      presentValue + clientData.currentDebts + immediateExpenses + futureCosts - existingAssets - existingInsuranceAdjustment
+    );
     
     const riskFactorsList = [
       `Idade ${clientData.age} anos`,
       `Saúde ${clientData.healthStatus}`,
       riskFactors.professionCategory,
-      clientData.hasDependents ? `${clientData.dependentsCount} dependente(s)` : "Sem dependentes"
+      clientData.hasDependents ? `${clientData.dependentsCount} dependente(s)` : "Sem dependentes",
+      ...(clientData.fumante ? ["Fumante"] : []),
+      ...(clientData.praticaEsportesRisco ? ["Esportes de risco"] : []),
+      ...(clientData.historicoDoencasGravesFamilia ? ["Histórico familiar"] : [])
     ];
+
+    let justification = `Baseado na metodologia de substituição de renda, calculamos ${replacementYears} anos de cobertura considerando sua renda anual de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(annualIncome)}. `;
+    
+    if (clientData.currentDebts > 0) {
+      justification += `Incluímos quitação de dívidas (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.currentDebts)}), `;
+    }
+    
+    justification += `despesas imediatas e ${clientData.hasDependents ? 'custos educacionais dos dependentes' : 'reservas para gastos futuros'}. `;
+    
+    if (existingAssets > 0) {
+      justification += `Consideramos seus investimentos e reservas existentes de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(existingAssets)} no cálculo.`;
+    }
 
     return {
       type: "Morte",
       amount: Math.round(totalAmount),
-      justification: `Baseado na metodologia de substituição de renda, calculamos ${replacementYears} anos de cobertura considerando sua renda anual de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(annualIncome)}. Incluímos quitação de dívidas (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.currentDebts)}), despesas imediatas e ${clientData.hasDependents ? 'custos educacionais dos dependentes' : 'reservas para gastos futuros'}.`,
+      justification,
       priority: "high" as const,
       riskFactors: riskFactorsList,
-      calculationBasis: `${replacementYears} anos de renda`
+      calculationBasis: `${replacementYears} anos de renda ajustados`
     };
   }
 
@@ -136,28 +170,46 @@ export class InsuranceCalculatorService {
 
   private calculateCriticalIllnessInsurance(clientData: ClientData, riskFactors: any): CoverageRecommendation {
     // Baseado em custos médicos + perda de renda durante tratamento
-    const treatmentCosts = clientData.monthlyIncome * 18; // 18 meses de renda para tratamentos
-    const medicalExpenses = Math.max(100000, clientData.monthlyIncome * 12); // Mínimo R$ 100k
+    const monthlyExpenses = clientData.despesasMensais || (clientData.monthlyIncome * 0.7);
+    const treatmentCosts = monthlyExpenses * 24; // 24 meses de despesas durante tratamento
+    const medicalExpenses = Math.max(80000, clientData.monthlyIncome * 8); // Mínimo R$ 80k ou 8x renda mensal
     
     const totalAmount = treatmentCosts + medicalExpenses;
     
-    const priority = clientData.healthStatus !== "excelente" || clientData.age > 40 ? 
-      "high" as const : "medium" as const;
+    // Avaliar prioridade baseada em fatores de risco
+    let priority: "high" | "medium" | "low" = "medium";
+    if (clientData.healthStatus === "precario" || clientData.healthStatus === "regular" ||
+        clientData.historicoDoencasGravesFamilia || clientData.fumante || clientData.age > 45) {
+      priority = "high";
+    }
 
     const riskFactorsList = [
       `Estado de saúde: ${clientData.healthStatus}`,
       `Idade ${clientData.age} anos`,
-      `Histórico familiar considerado`,
+      ...(clientData.historicoDoencasGravesFamilia ? ["Histórico familiar de doenças graves"] : []),
+      ...(clientData.fumante ? ["Fumante - alto risco cardiovascular"] : []),
       "Custos de tratamentos especializados"
     ];
+
+    let justification = `Calculada para cobrir 24 meses de despesas mensais (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyExpenses)}) durante tratamento, mais despesas médicas não cobertas por planos de saúde. `;
+    
+    if (clientData.historicoDoencasGravesFamilia) {
+      justification += `Com histórico familiar de doenças graves, esta proteção é fundamental. `;
+    }
+    
+    if (clientData.fumante) {
+      justification += `Como fumante, o risco de doenças cardiovasculares e câncer é significativamente maior. `;
+    }
+    
+    justification += `Esta cobertura oferece tranquilidade financeira durante momentos críticos.`;
 
     return {
       type: "Doenças Graves",
       amount: Math.round(totalAmount),
-      justification: `Calculada para cobrir 18 meses de substituição de renda durante tratamento, mais despesas médicas não cobertas por planos de saúde. Com seu perfil de saúde ${clientData.healthStatus} e idade ${clientData.age} anos, esta proteção oferece tranquilidade financeira durante momentos críticos.`,
+      justification,
       priority,
       riskFactors: riskFactorsList,
-      calculationBasis: "18 meses renda + tratamentos"
+      calculationBasis: "24 meses despesas + tratamentos"
     };
   }
 
@@ -201,11 +253,19 @@ export class InsuranceCalculatorService {
   }
 
   public calculateInsuranceRecommendations(clientData: ClientData): ClientAnalysis {
-    // Calcular fatores de risco
+    // Calcular fatores de risco aprimorados
     const ageRiskFactor = this.getAgeRiskFactor(clientData.age);
-    const healthRiskFactor = this.getHealthRiskFactor(clientData.healthStatus);
+    let healthRiskFactor = this.getHealthRiskFactor(clientData.healthStatus);
     const professionRisk = this.getProfessionRiskFactor(clientData.profession);
     const dependentsImpact = this.getDependentsImpactFactor(clientData.hasDependents, clientData.dependentsCount);
+    
+    // Aplicar fatores de estilo de vida
+    let lifestyleMultiplier = 1.0;
+    if (clientData.fumante) lifestyleMultiplier *= 1.8;
+    if (clientData.praticaEsportesRisco) lifestyleMultiplier *= 1.3;
+    if (clientData.historicoDoencasGravesFamilia) {
+      healthRiskFactor *= 1.2; // Aumenta o risco de saúde
+    }
     
     const riskFactors = {
       ageRiskFactor,
@@ -213,7 +273,8 @@ export class InsuranceCalculatorService {
       professionRiskFactor: professionRisk.multiplier,
       professionCategory: professionRisk.category,
       dependentsImpact,
-      totalMultiplier: ageRiskFactor * healthRiskFactor * professionRisk.multiplier * dependentsImpact
+      lifestyleMultiplier,
+      totalMultiplier: ageRiskFactor * healthRiskFactor * professionRisk.multiplier * dependentsImpact * lifestyleMultiplier
     };
 
     // Calcular coberturas
@@ -237,7 +298,7 @@ export class InsuranceCalculatorService {
       recommendedCoverages: coverages,
       summary,
       analysisDetails: {
-        ageRiskFactor: ageRiskFactor - 1, // Normalizado para mostrar incremento
+        ageRiskFactor: ageRiskFactor - 1,
         healthRiskFactor: healthRiskFactor - 1,
         professionRiskFactor: professionRisk.multiplier - 1,
         dependentsImpact: dependentsImpact - 1
@@ -258,18 +319,57 @@ export class InsuranceCalculatorService {
     const totalCoverage = coverages.reduce((sum, coverage) => sum + coverage.amount, 0);
     const highPriorityCoverages = coverages.filter(c => c.priority === "high").length;
     
-    return `Análise completa para ${clientData.name}, ${clientData.age} anos, ${clientData.profession.toLowerCase()}. 
+    let summary = `**ANÁLISE COMPLETA DE SEGUROS DE VIDA**\n\n`;
     
-    Com base na metodologia atuarial aplicada, seu perfil apresenta multiplicador de risco de ${riskFactors.totalMultiplier.toFixed(2)}x, considerando fatores de idade, saúde, profissão e dependentes.
+    // Perfil do cliente
+    summary += `👤 **Perfil do Cliente:**\n`;
+    summary += `• ${clientData.name}, ${clientData.age} anos, ${clientData.profession.toLowerCase()}\n`;
+    summary += `• Estado civil: ${clientData.estadoCivil || 'Não informado'}\n`;
+    summary += `• Renda mensal: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.monthlyIncome)}\n`;
+    if (clientData.patrimonio) {
+      summary += `• Patrimônio: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.patrimonio)}\n`;
+    }
+    summary += `• Dependentes: ${clientData.hasDependents ? `${clientData.dependentsCount} pessoa(s)` : 'Nenhum'}\n`;
     
-    Recomendamos proteção total de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCoverage)}, distribuída em ${highPriorityCoverages} coberturas prioritárias.
+    // Fatores de risco identificados
+    summary += `\n⚠️ **Fatores de Risco Identificados:**\n`;
+    if (clientData.fumante) summary += `• Fumante - risco cardiovascular e oncológico elevado\n`;
+    if (clientData.praticaEsportesRisco) summary += `• Esportes de risco - maior exposição a acidentes\n`;
+    if (clientData.historicoDoencasGravesFamilia) summary += `• Histórico familiar - predisposição genética\n`;
+    if (clientData.age > 50) summary += `• Idade avançada - maior probabilidade de problemas de saúde\n`;
+    summary += `• Multiplicador de risco total: ${riskFactors.totalMultiplier.toFixed(2)}x\n`;
     
-    ${clientData.hasDependents ? 
-      `Com ${clientData.dependentsCount} dependente(s), priorizamos a segurança financeira familiar através de coberturas robustas de morte e invalidez.` : 
-      'O foco está na proteção individual e manutenção do padrão de vida.'
+    // Coberturas recomendadas
+    summary += `\n📋 **Coberturas Recomendadas:**\n`;
+    coverages.forEach(coverage => {
+      const priority = coverage.priority === 'high' ? '🔴 ALTA' : 
+                     coverage.priority === 'medium' ? '🟡 MÉDIA' : '🟢 BAIXA';
+      summary += `${priority} - ${coverage.type}: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(coverage.amount)}\n`;
+    });
+    
+    summary += `\n💰 **Investimento Total:** ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCoverage)}\n`;
+    summary += `🎯 **Coberturas Prioritárias:** ${highPriorityCoverages} de ${coverages.length}\n\n`;
+    
+    // Justificativa
+    if (clientData.hasDependents) {
+      summary += `**Por que é essencial:** Com ${clientData.dependentsCount} dependente(s), sua família depende de sua renda para manter o padrão de vida. `;
+    } else {
+      summary += `**Por que é importante:** Mesmo sem dependentes diretos, ter proteção evita ser um encargo financeiro para sua família. `;
+    }
+    summary += `As coberturas recomendadas seguem metodologias atuariais reconhecidas e garantem tranquilidade financeira.\n\n`;
+    
+    // Próximos passos
+    summary += `**Próximos Passos:**\n`;
+    summary += `1. Revisar e ajustar valores conforme orçamento disponível\n`;
+    summary += `2. Comparar produtos de diferentes seguradoras\n`;
+    summary += `3. Priorizar contratação das coberturas de alta prioridade (🔴)\n`;
+    summary += `4. Considerar parcelamento e condições de pagamento\n`;
+    
+    if (clientData.corretorParceiro) {
+      summary += `\n🤝 **Corretor Parceiro:** ${clientData.corretorParceiro}`;
     }
     
-    A análise considera custos de substituição de renda, despesas médicas, adaptações necessárias e quitação de dívidas existentes.`;
+    return summary;
   }
 }
 
