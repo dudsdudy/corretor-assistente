@@ -82,8 +82,15 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           email: string | null
+          free_studies_limit: number | null
+          free_studies_used: number | null
           full_name: string | null
           id: string
+          is_premium: boolean | null
+          phone_number: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
+          trial_started_at: string | null
           updated_at: string
           user_id: string
         }
@@ -91,8 +98,15 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          free_studies_limit?: number | null
+          free_studies_used?: number | null
           full_name?: string | null
           id?: string
+          is_premium?: boolean | null
+          phone_number?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -100,9 +114,40 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          free_studies_limit?: number | null
+          free_studies_used?: number | null
           full_name?: string | null
           id?: string
+          is_premium?: boolean | null
+          phone_number?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
+          trial_started_at?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_events: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
           user_id?: string
         }
         Relationships: []
@@ -133,12 +178,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_study: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_free_studies_used: {
+        Args: { p_user_id: string }
+        Returns: {
+          limit_reached: boolean
+          studies_remaining: number
+          studies_used: number
+        }[]
       }
     }
     Enums: {
