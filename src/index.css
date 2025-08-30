@@ -228,6 +228,7 @@
     @apply max-w-full;
     font-size: 12px !important;
     line-height: 1.4 !important;
+    color: #000 !important;
   }
   
   .print-layout .text-3xl {
@@ -284,11 +285,59 @@
   .print-layout .bg-gradient-hero,
   .print-layout .bg-gradient-card {
     background: hsl(var(--primary)) !important;
-    color: hsl(var(--primary-foreground)) !important;
+    color: white !important;
   }
 
-  .print-layout .text-primary-foreground {
+  .print-layout .text-primary-foreground,
+  .print-layout .text-primary-foreground\/90 {
     color: white !important;
+  }
+
+  .print-layout .text-muted-foreground {
+    color: #666 !important;
+  }
+
+  .print-layout .border {
+    border-color: #ddd !important;
+  }
+
+  .print-layout .bg-muted\/30 {
+    background: #f5f5f5 !important;
+  }
+
+  .print-layout .text-primary {
+    color: hsl(var(--primary)) !important;
+  }
+
+  .print-layout .bg-primary\/10 {
+    background: rgba(59, 130, 246, 0.1) !important;
+  }
+
+  /* Hide print-only content during normal view */
+  .print\:hidden {
+    display: none;
+  }
+
+  /* Show print-only content during print layout */
+  .print-layout .print\:hidden {
+    display: none !important;
+  }
+
+  .print-layout .print\:block {
+    display: block !important;
+  }
+
+  .print-layout .print\:border {
+    border: 1px solid #ddd !important;
+  }
+
+  .print-layout .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print-layout .print\:break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 

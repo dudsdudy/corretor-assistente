@@ -29,6 +29,7 @@ import heroImage from "@/assets/hero-insurance.jpg";
 import ClientDataForm, { ClientData } from "@/components/ClientDataForm";
 import VoiceInput from "@/components/VoiceInput";
 import RecommendationDisplay, { ClientAnalysis } from "@/components/RecommendationDisplay";
+import EditableRecommendationDisplay from "@/components/EditableRecommendationDisplay";
 import AppHeader from "@/components/AppHeader";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -121,9 +122,30 @@ const Index = () => {
   };
 
   const extractClientDataFromTranscript = (transcript: string): ClientData => {
-    // Extract name
-    const nameMatch = transcript.match(/(?:cliente|nome|chama)\s+([A-Za-záéíóúàèìòùâêîôûãõçÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ\s]+?)(?:\s|,|\.)/i);
-    const name = nameMatch ? nameMatch[1].trim() : "Cliente";
+    // Extract name - improved pattern to catch names in various contexts
+    let name = "Cliente";
+    
+    // Try multiple patterns to extract names
+    const namePatterns = [
+      // Pattern 1: "para [Nome]" (most common)
+      /(?:para|de)\s+([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)*)/i,
+      // Pattern 2: "cliente [Nome]" or "chama [Nome]" 
+      /(?:cliente|nome|chama)\s+([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)*)/i,
+      // Pattern 3: Look for capitalized words that look like names (2+ capital letters)
+      /([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)/
+    ];
+    
+    for (const pattern of namePatterns) {
+      const match = transcript.match(pattern);
+      if (match && match[1] && match[1].length > 2) {
+        const extractedName = match[1].trim();
+        // Verify it's not common words
+        if (!extractedName.toLowerCase().match(/^(ele|ela|anos|trabalha|ganha|reais|possui|tem)$/)) {
+          name = extractedName;
+          break;
+        }
+      }
+    }
     
     // Extract age
     const ageMatch = transcript.match(/(\d+)\s*anos?/i) || transcript.match(/idade\s+(\d+)/i);
@@ -243,19 +265,25 @@ const Index = () => {
       element.classList.add('print-layout');
       document.body.classList.add('printing');
       
-      // Configurações otimizadas para PDF
+      // Aguarda um pouco para que os estilos sejam aplicados
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Configurações otimizadas para PDF com melhor qualidade
       const canvas = await html2canvas(element, { 
-        scale: 1.5, 
+        scale: 2, // Aumenta a qualidade
         useCORS: true, 
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: element.scrollWidth,
         height: element.scrollHeight,
         windowWidth: 1200,
-        windowHeight: element.scrollHeight
+        windowHeight: element.scrollHeight,
+        logging: false, // Remove logs desnecessários
+        removeContainer: true,
+        imageTimeout: 10000
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0); // Qualidade máxima
       
       // Configuração do PDF otimizada
       const pdf = new jsPDF({
@@ -267,35 +295,49 @@ const Index = () => {
       
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
+      const margin = 8; // Margens menores para melhor aproveitamento
       const availableWidth = pageWidth - (margin * 2);
       const availableHeight = pageHeight - (margin * 2);
       
       const imgProps = { width: canvas.width, height: canvas.height };
-      const ratio = Math.min(availableWidth / imgProps.width, availableHeight / imgProps.height);
-      const imgWidth = imgProps.width * ratio;
-      const imgHeight = imgProps.height * ratio;
+      const ratio = Math.min(availableWidth / (imgProps.width * 0.264583), availableHeight / (imgProps.height * 0.264583));
+      const imgWidth = (imgProps.width * 0.264583) * ratio; // Converte px para mm
+      const imgHeight = (imgProps.height * 0.264583) * ratio;
       
       // Se a imagem for muito alta, dividir em páginas
       if (imgHeight > availableHeight) {
         let currentY = 0;
         let pageNumber = 1;
+        const pagesNeeded = Math.ceil(imgHeight / availableHeight);
         
-        while (currentY < imgHeight) {
+        while (currentY < imgHeight && pageNumber <= pagesNeeded) {
           if (pageNumber > 1) {
             pdf.addPage();
           }
           
           const remainingHeight = Math.min(availableHeight, imgHeight - currentY);
+          const sourceY = (currentY / ratio) / 0.264583; // Converte de volta para px
+          const sourceHeight = (remainingHeight / ratio) / 0.264583;
           
-          pdf.addImage(
-            imgData, 
-            'PNG', 
-            margin, 
-            margin, 
-            imgWidth, 
-            remainingHeight
-          );
+          // Cria um canvas temporário para a parte atual
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = sourceHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          if (tempCtx) {
+            tempCtx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+            const tempImgData = tempCanvas.toDataURL('image/png', 1.0);
+            
+            pdf.addImage(
+              tempImgData, 
+              'PNG', 
+              margin, 
+              margin, 
+              availableWidth, 
+              remainingHeight
+            );
+          }
           
           currentY += availableHeight;
           pageNumber++;
@@ -317,7 +359,7 @@ const Index = () => {
       
       toast({
         title: "PDF gerado com sucesso!",
-        description: `Arquivo ${fileName} baixado.`,
+        description: `Arquivo ${fileName} baixado com formatação otimizada.`,
       });
       
     } catch (e: any) {
@@ -535,11 +577,11 @@ const Index = () => {
               </div>
             </div>
             <div id="proposal-content">
-              <RecommendationDisplay 
-                analysis={analysis}
-                onGeneratePDF={handleGeneratePDF}
-                onSaveAnalysis={handleSaveAnalysis}
-              />
+            <EditableRecommendationDisplay 
+              analysis={analysis} 
+              onGeneratePDF={handleGeneratePDF}
+              onSaveAnalysis={handleSaveAnalysis}
+            />
             </div>
           </div>
         )}
