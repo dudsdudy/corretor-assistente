@@ -42,40 +42,59 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Voice-to-text request received');
     const { audio } = await req.json()
     
     if (!audio) {
+      console.error('No audio data provided in request');
       throw new Error('No audio data provided')
     }
 
+    console.log(`Processing audio data of length: ${audio.length}`);
+
     // Process audio in chunks
     const binaryAudio = processBase64Chunks(audio)
+    console.log(`Processed binary audio size: ${binaryAudio.length} bytes`);
     
-    // Prepare form data
+    // Prepare form data with enhanced settings
     const formData = new FormData()
     const blob = new Blob([binaryAudio], { type: 'audio/webm' })
     formData.append('file', blob, 'audio.webm')
     formData.append('model', 'whisper-1')
+    formData.append('language', 'pt') // Especifica português
+    formData.append('prompt', 'Transcreva com precisão nomes próprios como Maria, João, Ana, Carlos, etc. Este é um áudio sobre dados pessoais de clientes de seguros.') // Contexto para melhor transcrição
 
     const openAIKey = Deno.env.get('OPENAI_API_KEY')
     if (!openAIKey) {
+      console.error('OPENAI_API_KEY not found in environment');
       throw new Error('Missing OPENAI_API_KEY secret in Edge Functions settings')
     }
 
-    // Send to OpenAI
+    console.log('Sending request to OpenAI Whisper API...');
+
+    // Send to OpenAI with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIKey}`,
       },
       body: formData,
+      signal: controller.signal
     })
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${await response.text()}`)
+      const errorText = await response.text();
+      console.error(`OpenAI API error (${response.status}): ${errorText}`);
+      throw new Error(`OpenAI API error: ${errorText}`)
     }
 
     const result = await response.json()
+    console.log(`Transcription successful: "${result.text}"`);
 
     return new Response(
       JSON.stringify({ text: result.text }),
@@ -83,6 +102,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Voice-to-text error:', error);
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
       {

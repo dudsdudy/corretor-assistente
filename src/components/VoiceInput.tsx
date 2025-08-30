@@ -18,61 +18,129 @@ const VoiceInput = ({ onTranscript, loading = false }: VoiceInputProps) => {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      console.log('Iniciando gravação de áudio...');
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 16000,     // Reduzir para 16kHz (padrão Whisper)
+          channelCount: 1,       // Mono
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      
+      console.log('Microfone acessado com sucesso');
+      
+      // Usar tipo de mídia mais compatível
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus'
+      ];
+      
+      let selectedMimeType = 'audio/webm';
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+      
+      console.log(`Usando formato de áudio: ${selectedMimeType}`);
+      
+      const mediaRecorder = new MediaRecorder(stream, { 
+        mimeType: selectedMimeType,
+        audioBitsPerSecond: 128000 // 128kbps para melhor qualidade
+      });
       mediaRecorderRef.current = mediaRecorder;
 
       const audioChunks: Blob[] = [];
       
       mediaRecorder.ondataavailable = (event) => {
+        console.log(`Chunk de áudio recebido: ${event.data.size} bytes`);
         if (event.data.size > 0) audioChunks.push(event.data);
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        console.log('Gravação finalizada, processando áudio...');
+        const audioBlob = new Blob(audioChunks, { type: selectedMimeType });
+        console.log(`Tamanho total do áudio: ${audioBlob.size} bytes`);
+        
         const toBase64 = (blob: Blob) => new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]); // Remove data:audio/... prefix
+          };
           reader.onerror = reject;
           reader.readAsDataURL(blob);
         });
 
         try {
-          toast({ title: 'Transcrevendo áudio...', description: 'Aguarde alguns instantes.' });
+          toast({ 
+            title: 'Transcrevendo áudio...', 
+            description: 'Aguarde alguns instantes enquanto processamos sua gravação.' 
+          });
+          
           const base64Audio = await toBase64(audioBlob);
+          console.log(`Áudio convertido para base64: ${base64Audio.length} caracteres`);
           
           // Use Supabase client to call edge function
           const { data, error } = await supabase.functions.invoke('voice-to-text', {
             body: { audio: base64Audio }
           });
 
-          if (error) throw new Error(error.message);
-          if (!data.text) throw new Error('Falha na transcrição');
+          if (error) {
+            console.error('Erro na edge function:', error);
+            throw new Error(error.message);
+          }
+          
+          if (!data || !data.text) {
+            console.error('Resposta inválida da edge function:', data);
+            throw new Error('Falha na transcrição - resposta vazia');
+          }
 
+          console.log(`Transcrição recebida: "${data.text}"`);
           setTranscript(data.text);
           onTranscript(data.text);
+          
+          toast({
+            title: "Transcrição concluída!",
+            description: `Texto reconhecido: "${data.text.substring(0, 50)}${data.text.length > 50 ? '...' : ''}"`
+          });
+          
         } catch (err: any) {
-          const fallback = 'Transcrição indisponível no momento. Descreva manualmente os dados do cliente.';
+          console.error('Erro na transcrição:', err);
+          const fallback = 'Falha na transcrição. Tente falar mais próximo ao microfone e mais pausadamente.';
           setTranscript(fallback);
-          toast({ title: 'Falha na transcrição', description: err.message, variant: 'destructive' });
+          toast({ 
+            title: 'Falha na transcrição', 
+            description: err.message || 'Erro desconhecido. Tente novamente.', 
+            variant: 'destructive' 
+          });
         }
         
         // Stop all tracks to release microphone
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log('Track de áudio liberado');
+        });
       };
 
-      mediaRecorder.start();
+      // Gravar em chunks menores para melhor qualidade
+      mediaRecorder.start(1000); // Chunk a cada 1 segundo
       setIsRecording(true);
       
       toast({
         title: "Gravação iniciada",
-        description: "Fale sobre o perfil do seu cliente...",
+        description: "🎤 Fale claramente o nome e dados do cliente...",
       });
     } catch (error) {
+      console.error('Erro ao acessar microfone:', error);
       toast({
         title: "Erro no microfone",
-        description: "Não foi possível acessar o microfone. Verifique as permissões.",
+        description: "Não foi possível acessar o microfone. Verifique as permissões do navegador.",
         variant: "destructive",
       });
     }
