@@ -125,22 +125,27 @@ const Index = () => {
     // Extract name - improved pattern to catch names in various contexts
     let name = "Cliente";
     
-    // Try multiple patterns to extract names
+    // Improved patterns to extract names with better context understanding
     const namePatterns = [
-      // Pattern 1: "para [Nome]" (most common)
-      /(?:para|de)\s+([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)*)/i,
-      // Pattern 2: "cliente [Nome]" or "chama [Nome]" 
-      /(?:cliente|nome|chama)\s+([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)*)/i,
-      // Pattern 3: Look for capitalized words that look like names (2+ capital letters)
-      /([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)/
+      // Pattern 1: Direct name patterns - "para [Nome]", "de [Nome]", "do/da [Nome]"
+      /(?:para|de|do|da)\s+([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)*)/i,
+      // Pattern 2: "cliente se chama [Nome]", "nome é [Nome]", "chama [Nome]"
+      /(?:cliente\s+(?:se\s+)?chama|nome\s+(?:é|eh)|chama(?:\-se)?)\s+([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)*)/i,
+      // Pattern 3: Starting with names - "[Nome] tem/possui/é"
+      /^([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)*)\s+(?:tem|possui|é|trabalha|ganha)/i,
+      // Pattern 4: "o cliente [Nome]" or "a cliente [Nome]"
+      /(?:o|a)\s+cliente\s+([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)*)/i,
+      // Pattern 5: Names appearing between common words
+      /(?:^|\s)([A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+\s+[A-ZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ][a-záéíóúàèìòùâêîôûãõç]+)(?:\s+(?:tem|possui|é|trabalha|ganha|anos))/i
     ];
     
     for (const pattern of namePatterns) {
       const match = transcript.match(pattern);
       if (match && match[1] && match[1].length > 2) {
         const extractedName = match[1].trim();
-        // Verify it's not common words
-        if (!extractedName.toLowerCase().match(/^(ele|ela|anos|trabalha|ganha|reais|possui|tem)$/)) {
+        // Verify it's not common words or professions
+        const commonWords = /^(ele|ela|anos|trabalha|ganha|reais|possui|tem|cliente|pessoa|homem|mulher|senhor|senhora|enfermeiro|enfermeira|medico|medica|professor|professora|vendedor|vendedora)$/i;
+        if (!commonWords.test(extractedName.trim())) {
           name = extractedName;
           break;
         }

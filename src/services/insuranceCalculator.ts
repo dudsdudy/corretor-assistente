@@ -42,6 +42,84 @@ const PROFESSION_RISK_CATEGORIES: Record<string, { multiplier: number; category:
 };
 
 export class InsuranceCalculatorService {
+  // Implementação de metodologias atuariais internacionais
+  
+  // Human Life Value (HLV) - Valor presente da renda futura
+  private calculateHumanLifeValue(clientData: ClientData, yearsToRetirement: number): number {
+    const annualIncome = clientData.monthlyIncome * 12;
+    const growthRate = 0.02; // 2% crescimento salarial anual
+    const discountRate = 0.04; // 4% taxa de desconto
+    const taxRate = 0.25; // 25% impostos
+    const consumptionRate = 0.30; // 30% consumo pessoal
+    
+    let hlv = 0;
+    for (let year = 1; year <= yearsToRetirement; year++) {
+      const futureIncome = annualIncome * Math.pow(1 + growthRate, year - 1);
+      const netIncome = futureIncome * (1 - taxRate) * (1 - consumptionRate);
+      const presentValue = netIncome / Math.pow(1 + discountRate, year);
+      hlv += presentValue;
+    }
+    
+    return hlv;
+  }
+  
+  // Metodologia DIME (Debts, Income, Mortgage, Education)
+  private calculateDIMEMethod(clientData: ClientData): number {
+    const debts = clientData.currentDebts || 0;
+    const incomeReplacement = this.calculateIncomeReplacement(clientData);
+    const mortgageDebt = 0; // TODO: Adicionar campo para hipoteca
+    const educationCosts = this.calculateEducationCosts(clientData);
+    const existingAssets = (clientData.valorInvestimento || 0) + (clientData.reservasFinanceiras || 0);
+    
+    return Math.max(0, debts + incomeReplacement + mortgageDebt + educationCosts - existingAssets);
+  }
+  
+  // Cálculo de substituição de renda para dependentes
+  private calculateIncomeReplacement(clientData: ClientData): number {
+    const annualIncome = clientData.monthlyIncome * 12;
+    const replacementRate = 0.70; // 70% da renda
+    let yearsOfSupport = 0;
+    
+    if (clientData.hasDependents) {
+      // Estimar anos até independência dos dependentes
+      const averageAgeToIndependence = 25;
+      const currentAverageAge = 15; // Estimativa
+      yearsOfSupport = Math.max(averageAgeToIndependence - currentAverageAge, 10);
+    } else if (clientData.estadoCivil === 'casado' || clientData.estadoCivil === 'uniao_estavel') {
+      yearsOfSupport = 10; // Suporte ao cônjuge
+    }
+    
+    const replacementIncome = annualIncome * replacementRate;
+    const discountRate = 0.04;
+    
+    // Valor presente da anuidade
+    if (yearsOfSupport > 0) {
+      return replacementIncome * ((1 - Math.pow(1 + discountRate, -yearsOfSupport)) / discountRate);
+    }
+    
+    return 0;
+  }
+  
+  // Cálculo de custos educacionais
+  private calculateEducationCosts(clientData: ClientData): number {
+    if (!clientData.hasDependents) return 0;
+    
+    const costPerChild = 150000; // R$ 150k por filho (ensino superior)
+    const educationInflation = 0.06; // 6% ao ano
+    const yearsToCollege = 8; // Média de anos até faculdade
+    
+    return clientData.dependentsCount * costPerChild * Math.pow(1 + educationInflation, yearsToCollege);
+  }
+  
+  // Capital Retention Method
+  private calculateCapitalRetention(clientData: ClientData): number {
+    const annualIncome = clientData.monthlyIncome * 12;
+    const requiredReturn = 0.04; // 4% retorno anual
+    const replacementRate = 0.70; // 70% da renda
+    
+    return (annualIncome * replacementRate) / requiredReturn;
+  }
+
   private getAgeRiskFactor(age: number): number {
     if (age <= 25) return AGE_RISK_TABLE["18-25"];
     if (age <= 35) return AGE_RISK_TABLE["26-35"];
@@ -76,42 +154,36 @@ export class InsuranceCalculatorService {
   }
 
   private calculateLifeInsurance(clientData: ClientData, riskFactors: any): CoverageRecommendation {
-    // Metodologia aprimorada: Income Replacement + Débitos + Despesas Futuras - Ativos Existentes
+    // Implementação das metodologias HLV, DIME e Capital Retention
+    const retirementAge = 65;
+    const yearsToRetirement = Math.max(retirementAge - clientData.age, 5);
     const annualIncome = clientData.monthlyIncome * 12;
     
-    // Período de substituição de renda (baseado na idade e dependentes)
-    let replacementYears = 15; // Base
-    if (clientData.hasDependents) {
-      replacementYears = Math.max(20 - Math.floor((clientData.age - 30) / 5), 12);
-    } else if (clientData.estadoCivil === 'casado' || clientData.estadoCivil === 'uniao_estavel') {
-      replacementYears = 12;
-    } else {
-      replacementYears = 8;
-    }
+    // Calcular pelos três métodos
+    const hlvAmount = this.calculateHumanLifeValue(clientData, yearsToRetirement);
+    const dimeAmount = this.calculateDIMEMethod(clientData);
+    const capitalRetentionAmount = this.calculateCapitalRetention(clientData);
     
-    // Valor presente da renda futura (taxa de desconto de 4% a.a.)
-    const discountRate = 0.04;
-    const presentValue = annualIncome * ((1 - Math.pow(1 + discountRate, -replacementYears)) / discountRate);
+    // Usar o maior valor entre as metodologias, mas considerar 80% do HLV como mínimo
+    const minHlvAmount = hlvAmount * 0.8;
+    const totalAmount = Math.max(minHlvAmount, dimeAmount, capitalRetentionAmount);
     
-    // Despesas imediatas e futuras
-    const immediateExpenses = annualIncome * 0.15; // 15% da renda anual
-    const futureCosts = clientData.hasDependents ? 
-      clientData.dependentsCount * 60000 : 0; // R$ 60k por dependente (educação/custos)
+    // Aplicar multiplicadores de risco
+    const adjustedAmount = totalAmount * riskFactors.totalMultiplier;
     
     // Considerar ativos existentes (reduzem a necessidade)
     const existingAssets = (clientData.valorInvestimento || 0) + 
                           (clientData.reservasFinanceiras || 0) * 0.8; // 80% das reservas
     
-    // Ajustar por seguros existentes
-    let existingInsuranceAdjustment = 0;
-    if (clientData.existingInsurance && clientData.coberturasExistentes) {
-      // Estimativa conservadora baseada no prêmio pago
-      existingInsuranceAdjustment = (clientData.premioSeguroExistente || 0) * 100; // Estimativa grosseira
+    // Determinar período de cobertura baseado no perfil
+    let replacementYears = yearsToRetirement;
+    if (clientData.hasDependents) {
+      replacementYears = Math.max(20 - Math.floor((clientData.age - 30) / 5), 12);
+    } else if (clientData.estadoCivil === 'casado' || clientData.estadoCivil === 'uniao_estavel') {
+      replacementYears = 12;
+    } else {
+      replacementYears = Math.min(yearsToRetirement, 15);
     }
-    
-    const totalAmount = Math.max(100000, 
-      presentValue + clientData.currentDebts + immediateExpenses + futureCosts - existingAssets - existingInsuranceAdjustment
-    );
     
     const riskFactorsList = [
       `Idade ${clientData.age} anos`,
@@ -137,11 +209,11 @@ export class InsuranceCalculatorService {
 
     return {
       type: "Morte",
-      amount: Math.round(totalAmount),
+      amount: Math.round(Math.max(100000, adjustedAmount - existingAssets)),
       justification,
       priority: "high" as const,
       riskFactors: riskFactorsList,
-      calculationBasis: `${replacementYears} anos de renda ajustados`
+      calculationBasis: `Baseado em metodologias atuariais HLV/DIME`
     };
   }
 
