@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from '@supabase/supabase-js';
+import AppHeader from "@/components/AppHeader";
 
 interface ClientAnalysis {
   id: string;
@@ -165,47 +166,27 @@ const Leads = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5">
+      <AppHeader showBackButton={true} title="Painel de Leads" subtitle="Gerencie suas oportunidades de negócio" />
+      
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Voltar
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-primary rounded-lg">
-                <Users className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Painel de Leads</h1>
-                <p className="text-muted-foreground">Gerencie suas oportunidades de negócio</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Filtrar por status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="novo">Novos</SelectItem>
-                  <SelectItem value="contato">Em Contato</SelectItem>
-                  <SelectItem value="proposta">Proposta Enviada</SelectItem>
-                  <SelectItem value="negociacao">Em Negociação</SelectItem>
-                  <SelectItem value="fechado">Fechados</SelectItem>
-                  <SelectItem value="perdido">Perdidos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Filters */}
+        <div className="flex items-center justify-end gap-4 mb-8">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="novo">Novos</SelectItem>
+                <SelectItem value="contato">Em Contato</SelectItem>
+                <SelectItem value="proposta">Proposta Enviada</SelectItem>
+                <SelectItem value="negociacao">Em Negociação</SelectItem>
+                <SelectItem value="fechado">Fechados</SelectItem>
+                <SelectItem value="perdido">Perdidos</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

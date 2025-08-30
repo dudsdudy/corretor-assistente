@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { User, Session } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
 import { useFreeTrial } from "@/hooks/useFreeTrial";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { insuranceCalculator } from "@/services/insuranceCalculator";
 import { 
   Mic, 
@@ -16,8 +17,11 @@ import {
   Kanban, 
   Settings,
   TrendingUp,
-  FileBarChart
+  FileBarChart,
+  Menu,
+  X
 } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import NotificationBadge from "@/components/NotificationBadge";
 import FreeTrialCounter from "@/components/FreeTrialCounter";
 import FreeTrialBlockedModal from "@/components/FreeTrialBlockedModal";
@@ -25,6 +29,7 @@ import heroImage from "@/assets/hero-insurance.jpg";
 import ClientDataForm, { ClientData } from "@/components/ClientDataForm";
 import VoiceInput from "@/components/VoiceInput";
 import RecommendationDisplay, { ClientAnalysis } from "@/components/RecommendationDisplay";
+import AppHeader from "@/components/AppHeader";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -109,22 +114,75 @@ const Index = () => {
     });
   };
 
-  const handleVoiceTranscript = (transcript: string) => {
-    // For demo purposes, extract mock data from transcript
-    const mockClientData: ClientData = {
-      name: "João Silva",
-      age: 35,
-      gender: "masculino",
-      profession: "Engenheiro",
-      monthlyIncome: 8000,
-      hasDependents: true,
-      dependentsCount: 2,
-      currentDebts: 0,
-      healthStatus: "excelente",
-      existingInsurance: false
-    };
+  const extractClientDataFromTranscript = (transcript: string): ClientData => {
+    // Extract name
+    const nameMatch = transcript.match(/(?:cliente|nome|chama)\s+([A-Za-záéíóúàèìòùâêîôûãõçÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ\s]+?)(?:\s|,|\.)/i);
+    const name = nameMatch ? nameMatch[1].trim() : "Cliente";
     
-    handleFormSubmit(mockClientData);
+    // Extract age
+    const ageMatch = transcript.match(/(\d+)\s*anos?/i) || transcript.match(/idade\s+(\d+)/i);
+    const age = ageMatch ? parseInt(ageMatch[1]) : 30;
+    
+    // Extract profession
+    const professionMatch = transcript.match(/(?:trabalha|profissão|é|atua)\s+(?:como\s+)?([A-Za-záéíóúàèìòùâêîôûãõçÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ\s]+?)(?:\s*[,.]|\s+(?:ganha|renda|tem|possui|idade))/i);
+    const profession = professionMatch ? professionMatch[1].trim() : "Não informado";
+    
+    // Extract income
+    const incomeMatch = transcript.match(/(?:ganha|renda|salário).*?(\d+(?:\.\d+)?)\s*(?:mil|reais|R\$)?/i) ||
+                       transcript.match(/R\$\s*(\d+(?:\.\d+)?)/i) ||
+                       transcript.match(/(\d+)\s*mil/i);
+    let monthlyIncome = 5000;
+    if (incomeMatch) {
+      const value = parseFloat(incomeMatch[1]);
+      monthlyIncome = transcript.toLowerCase().includes('mil') ? value * 1000 : value;
+    }
+    
+    // Extract dependents
+    const dependentsMatch = transcript.match(/(\d+)\s*filhos?/i) || 
+                           transcript.match(/tem\s+(\d+)\s+(?:dependentes|filhos)/i) ||
+                           transcript.match(/possui\s+(\d+)/i);
+    const dependentsCount = dependentsMatch ? parseInt(dependentsMatch[1]) : 0;
+    const hasDependents = dependentsCount > 0;
+    
+    // Extract health status
+    let healthStatus = "boa";
+    if (transcript.toLowerCase().includes("excelente") || transcript.toLowerCase().includes("ótima")) {
+      healthStatus = "excelente";
+    } else if (transcript.toLowerCase().includes("problema") || transcript.toLowerCase().includes("ruim")) {
+      healthStatus = "problemas";
+    }
+    
+    // Extract gender
+    let gender = "masculino";
+    if (transcript.toLowerCase().includes("mulher") || transcript.toLowerCase().includes("feminino") || 
+        transcript.toLowerCase().includes("ela")) {
+      gender = "feminino";
+    }
+    
+    return {
+      name: name || "Cliente",
+      age,
+      gender,
+      profession,
+      monthlyIncome,
+      hasDependents,
+      dependentsCount,
+      currentDebts: 0, // Default
+      healthStatus,
+      existingInsurance: transcript.toLowerCase().includes("seguro") && 
+                        !transcript.toLowerCase().includes("não tem seguro")
+    };
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    const clientData = extractClientDataFromTranscript(transcript);
+    
+    toast({
+      title: "Dados extraídos da voz",
+      description: `Cliente: ${clientData.name}, ${clientData.age} anos, ${clientData.profession}`,
+    });
+    
+    handleFormSubmit(clientData);
   };
 
   const handleSaveAnalysis = async () => {
@@ -232,40 +290,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5">
-      {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-hero rounded-lg">
-              <Shield className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Corretor Consultor</h1>
-              <p className="text-xs text-muted-foreground">Inteligência em Seguros de Vida</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/leads")} className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Painel de Leads
-              <NotificationBadge />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/sales")}>
-              <Kanban className="h-4 w-4 mr-2" />
-              Gestão de Vendas
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/settings")}>
-              <Settings className="h-4 w-4 mr-2" />
-              Configurações
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

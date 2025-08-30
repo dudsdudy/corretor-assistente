@@ -15,6 +15,7 @@ import {
   Download
 } from "lucide-react";
 import { User } from '@supabase/supabase-js';
+import AppHeader from "@/components/AppHeader";
 
 interface ClientAnalysis {
   id: string;
@@ -164,28 +165,11 @@ const Sales = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5">
+      <AppHeader showBackButton={true} title="Gestão de Vendas" subtitle="Pipeline comercial e acompanhamento de oportunidades" />
+      
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Voltar
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-success rounded-lg">
-                <TrendingUp className="h-6 w-6 text-success-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Gestão de Vendas</h1>
-                <p className="text-muted-foreground">Pipeline comercial e acompanhamento de oportunidades</p>
-              </div>
-            </div>
-          </div>
+        {/* Action Bar */}
+        <div className="flex items-center justify-end mb-8">
 
           <Button onClick={() => navigate("/")} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
