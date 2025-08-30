@@ -141,30 +141,32 @@ const Pricing = () => {
           </Card>
 
           {/* Pro Plan Card */}
-          <Card className={`relative ${isPremium ? 'ring-2 ring-primary shadow-lg' : ''}`}>
+          <Card className={`relative transform transition-all duration-300 hover:scale-105 ${isPremium ? 'ring-2 ring-primary shadow-2xl bg-gradient-to-br from-primary/5 to-secondary/10' : 'shadow-lg hover:shadow-xl'}`}>
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-              <Badge className="bg-gradient-primary text-primary-foreground">
-                Recomendado
+              <Badge className="bg-gradient-primary text-primary-foreground px-4 py-1 text-sm font-semibold">
+                ⭐ Plano Ideal
               </Badge>
             </div>
             
-            <CardHeader>
+            <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Crown className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-2xl flex items-center gap-2 mb-2">
+                    <Crown className="h-6 w-6 text-primary" />
                     Plano Pro
                   </CardTitle>
-                  <p className="text-muted-foreground mt-2">Para corretores profissionais</p>
+                  <p className="text-muted-foreground">Para corretores profissionais</p>
                 </div>
                 {isPremium && (
-                  <Badge variant="default">Ativo</Badge>
+                  <Badge variant="default" className="bg-green-500 text-white">✓ Ativo</Badge>
                 )}
               </div>
-              <div className="mt-4">
-                <span className="text-3xl font-bold">R$ 49,99</span>
-                <span className="text-muted-foreground">/mês</span>
-                <p className="text-sm text-muted-foreground">Cobrado mensalmente</p>
+              <div className="mt-6 p-4 bg-gradient-subtle rounded-lg border">
+                <div className="text-center">
+                  <span className="text-4xl font-bold text-primary">R$ 49,99</span>
+                  <span className="text-muted-foreground text-lg">/mês</span>
+                </div>
+                <p className="text-center text-sm text-muted-foreground mt-2">Cobrado mensalmente • Cancele quando quiser</p>
               </div>
             </CardHeader>
             <CardContent>

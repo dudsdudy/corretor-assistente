@@ -13,7 +13,8 @@ import {
   Building2,
   User,
   Mail,
-  Clock
+  Clock,
+  CreditCard
 } from "lucide-react";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -269,6 +270,41 @@ const Settings = () => {
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
                   💡 <strong>Em breve:</strong> Lembretes automáticos via email e WhatsApp para leads que ficarem parados por mais de {reminderDays} dia(s).
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Subscription Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Assinatura
+              </CardTitle>
+              <CardDescription>
+                Gerencie sua assinatura e pagamentos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <p className="font-medium">Plano Pro</p>
+                  <p className="text-sm text-muted-foreground">R$ 49,99/mês</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/pricing')}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Gerenciar Assinatura
+                </Button>
+              </div>
+              
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  💳 <strong>Próxima cobrança:</strong> Em 30 dias • <strong>Cancelar:</strong> A qualquer momento sem multa
                 </p>
               </div>
             </CardContent>
