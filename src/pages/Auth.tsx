@@ -109,6 +109,14 @@ const Auth = () => {
             <CardDescription>
               Entre na sua conta ou crie uma nova para começar
             </CardDescription>
+            <div className="bg-primary/10 rounded-lg p-4 mt-4">
+              <p className="text-sm font-medium text-primary">
+                ⏰ Nossos usuários já economizaram mais de 10.000 horas!
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cada estudo economiza até 4 horas de trabalho manual
+              </p>
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">

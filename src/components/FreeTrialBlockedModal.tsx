@@ -60,14 +60,14 @@ const FreeTrialBlockedModal = ({ open, onOpenChange, user }: FreeTrialBlockedMod
             <Crown className="h-8 w-8 text-primary-foreground" />
           </div>
           <DialogTitle className="text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            🚀 TRANSFORME SUA CARREIRA AGORA!
+            🚀 ATIVE O TURBO PARA VENDAS RECORRENTES!
           </DialogTitle>
           <DialogDescription className="text-base">
             <span className="text-lg font-semibold text-foreground">Você provou que funciona!</span>
             <br />
             Seus primeiros estudos mostraram o poder da nossa metodologia.
             <br />
-            <span className="text-primary font-medium">Continue dominando o mercado com o plano PRO!</span>
+            <span className="text-primary font-medium">Continue dominando o mercado com estudos ilimitados!</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -104,7 +104,7 @@ const FreeTrialBlockedModal = ({ open, onOpenChange, user }: FreeTrialBlockedMod
         </div>
 
         <div className="bg-gradient-to-r from-success/10 to-accent/10 rounded-lg p-4 border-l-4 border-success">
-          <h5 className="font-semibold mb-3 text-success">💰 RESULTADOS COMPROVADOS EM APENAS 3 ESTUDOS:</h5>
+          <h5 className="font-semibold mb-3 text-success">💰 TURBO ATIVADO EM APENAS 3 ESTUDOS:</h5>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />
@@ -116,12 +116,12 @@ const FreeTrialBlockedModal = ({ open, onOpenChange, user }: FreeTrialBlockedMod
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />
-              <span className="font-medium">Método que fecha mais vendas</span> comprovadamente
+              <span className="font-medium">Vendas recorrentes garantidas</span> com este método
             </li>
           </ul>
           <div className="mt-3 p-2 bg-accent/20 rounded text-center">
             <p className="text-sm font-semibold text-accent">
-              🔥 Imagine o que você fará com ESTUDOS ILIMITADOS!
+              🔥 Com estudos ilimitados, você economiza 40h semanais!
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ const FreeTrialBlockedModal = ({ open, onOpenChange, user }: FreeTrialBlockedMod
             ) : (
               <Crown className="h-5 w-5 mr-2" />
             )}
-            🚀 EXPLODIR DE VENDER - R$ 49,99/mês
+            🚀 ATIVAR TURBO - R$ 49,99/mês
           </Button>
         </DialogFooter>
       </DialogContent>
