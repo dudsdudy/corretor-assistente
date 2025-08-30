@@ -99,9 +99,9 @@ const Settings = () => {
     }
 
     try {
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage com path do usuário
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}_logo.${fileExt}`;
+      const fileName = `${user.id}/logo.${fileExt}`;
       
       const { data, error } = await supabase.storage
         .from('avatars')
