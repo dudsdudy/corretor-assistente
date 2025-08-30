@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Check, Loader2, Settings } from "lucide-react";
+import { Crown, Check, Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useFreeTrial } from "@/hooks/useFreeTrial";
-import SubscriptionManager from "@/components/SubscriptionManager";
 import { useNavigate } from "react-router-dom";
 
 const Pricing = () => {
@@ -63,6 +62,18 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20">
       <div className="container mx-auto px-4 py-12 max-w-6xl">
+        {/* Back Button */}
+        <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">
@@ -81,7 +92,7 @@ const Pricing = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 items-start">
+        <div className="grid lg:grid-cols-2 gap-8 items-start max-w-4xl mx-auto">
           {/* Free Trial Card */}
           <Card className={`relative ${isPremium ? 'opacity-75' : ''}`}>
             <CardHeader>
@@ -213,45 +224,6 @@ const Pricing = () => {
               </Button>
             </CardContent>
           </Card>
-
-          {/* Subscription Management Card */}
-          {user && (
-            <div className="space-y-4">
-              <SubscriptionManager user={user} />
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Settings className="h-5 w-5" />
-                    Configurações
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    onClick={() => navigate('/settings')} 
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    Perfil e Configurações
-                  </Button>
-                  <Button 
-                    onClick={() => navigate('/leads')} 
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    Gerenciar Leads
-                  </Button>
-                  <Button 
-                    onClick={() => navigate('/sales')} 
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    Dashboard de Vendas
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
 
         {/* Footer */}

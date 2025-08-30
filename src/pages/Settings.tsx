@@ -290,7 +290,7 @@ const Settings = () => {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <p className="font-medium">Plano Pro</p>
-                  <p className="text-sm text-muted-foreground">R$ 49,99/mês</p>
+                  <p className="text-sm text-muted-foreground">Assinatura ativa</p>
                 </div>
                 <Button 
                   variant="outline" 
