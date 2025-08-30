@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Calculator } from "lucide-react";
+import { FileText, Calculator, Users, Plus, Trash2 } from "lucide-react";
 import ProfessionAutocomplete from "./ProfessionAutocomplete";
 
 export interface ClientData {
@@ -17,6 +17,7 @@ export interface ClientData {
   monthlyIncome: number;
   hasDependents: boolean;
   dependentsCount: number;
+  dependentsData?: DependentInfo[];
   currentDebts: number;
   healthStatus: string;
   existingInsurance: boolean;
@@ -37,6 +38,12 @@ export interface ClientData {
   corretorParceiro?: string;
 }
 
+export interface DependentInfo {
+  age: number;
+  yearsUntilEducationComplete: number;
+  educationType: 'superior' | 'medio' | 'tecnico';
+}
+
 interface ClientDataFormProps {
   onSubmit: (data: ClientData) => void;
   loading?: boolean;
@@ -51,6 +58,7 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
     monthlyIncome: 0,
     hasDependents: false,
     dependentsCount: 0,
+    dependentsData: [],
     currentDebts: 0,
     healthStatus: "",
     existingInsurance: false,
@@ -65,6 +73,35 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const addDependent = () => {
+    const newDependent: DependentInfo = {
+      age: 0,
+      yearsUntilEducationComplete: 0,
+      educationType: 'superior'
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      dependentsData: [...(prev.dependentsData || []), newDependent]
+    }));
+  };
+
+  const removeDependent = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      dependentsData: prev.dependentsData?.filter((_, i) => i !== index) || []
+    }));
+  };
+
+  const updateDependent = (index: number, field: keyof DependentInfo, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      dependentsData: prev.dependentsData?.map((dep, i) => 
+        i === index ? { ...dep, [field]: value } : dep
+      ) || []
     }));
   };
 
@@ -168,36 +205,123 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
           </div>
 
           {/* Family Information */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="hasDependents"
-                checked={formData.hasDependents}
-                onCheckedChange={(checked) => handleInputChange("hasDependents", checked)}
-              />
-              <Label htmlFor="hasDependents">Possui dependentes</Label>
-            </div>
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Informações da Família
+            </h3>
             
-            {formData.hasDependents && (
-              <div className="space-y-2">
-                <Label htmlFor="dependentsCount">Número de Dependentes</Label>
-                <Select
-                  value={formData.dependentsCount.toString()}
-                  onValueChange={(value) => handleInputChange("dependentsCount", parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5 ou mais</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="hasDependents"
+                  checked={formData.hasDependents}
+                  onCheckedChange={(checked) => {
+                    handleInputChange("hasDependents", checked);
+                    if (!checked) {
+                      handleInputChange("dependentsData", []);
+                      handleInputChange("dependentsCount", 0);
+                    }
+                  }}
+                />
+                <Label htmlFor="hasDependents">Possui dependentes</Label>
               </div>
-            )}
+              
+              {formData.hasDependents && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">Dados dos Dependentes</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addDependent}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar Dependente
+                    </Button>
+                  </div>
+                  
+                  {formData.dependentsData?.map((dependent, index) => (
+                    <Card key={index} className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium">Dependente {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeDependent(index)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Idade Atual</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="30"
+                            value={dependent.age || ""}
+                            onChange={(e) => updateDependent(index, 'age', parseInt(e.target.value) || 0)}
+                            placeholder="10"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Anos até completar estudos</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="25"
+                            value={dependent.yearsUntilEducationComplete || ""}
+                            onChange={(e) => updateDependent(index, 'yearsUntilEducationComplete', parseInt(e.target.value) || 0)}
+                            placeholder="8"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Tipo de Educação</Label>
+                          <Select
+                            value={dependent.educationType}
+                            onValueChange={(value) => updateDependent(index, 'educationType', value as DependentInfo['educationType'])}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="medio">Ensino Médio</SelectItem>
+                              <SelectItem value="tecnico">Ensino Técnico</SelectItem>
+                              <SelectItem value="superior">Ensino Superior</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </Card>
+                  )) || []}
+                  
+                  {(!formData.dependentsData || formData.dependentsData.length === 0) && (
+                    <div className="text-center p-4 text-muted-foreground">
+                      Clique em "Adicionar Dependente" para incluir informações sobre educação
+                    </div>
+                  )}
+                  
+                  {formData.dependentsData && formData.dependentsData.length > 0 && (
+                    <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+                      <p className="text-sm font-medium text-primary">
+                        📚 Resumo dos dependentes: {formData.dependentsData.length} dependente(s) cadastrado(s)
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Total estimado de custos educacionais será calculado com base nas idades e tipos de educação informados
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Health Information */}

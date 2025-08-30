@@ -64,6 +64,7 @@ if (!analysis) return null;
           monthlyIncome: Number(analysis.monthly_income) || 0,
           hasDependents: !!analysis.has_dependents,
           dependentsCount: analysis.dependents_count || 0,
+          dependentsData: analysis.dependents_data ? (Array.isArray(analysis.dependents_data) ? analysis.dependents_data : []) : [],
           currentDebts: Number(analysis.current_debts) || 0,
           healthStatus: analysis.health_status || '',
           existingInsurance: !!analysis.existing_insurance

@@ -256,6 +256,7 @@ const Index = () => {
           health_status: originalClientData.healthStatus,
           has_dependents: originalClientData.hasDependents,
           dependents_count: originalClientData.dependentsCount,
+          dependents_data: originalClientData.dependentsData ? JSON.parse(JSON.stringify(originalClientData.dependentsData)) : null,
           current_debts: originalClientData.currentDebts,
           existing_insurance: originalClientData.existingInsurance,
           recommended_coverage: analysis.recommendedCoverages as any,

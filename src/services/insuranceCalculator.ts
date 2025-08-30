@@ -1,4 +1,4 @@
-import { ClientData } from "@/components/ClientDataForm";
+import { ClientData, DependentInfo } from "@/components/ClientDataForm";
 import { ClientAnalysis, CoverageRecommendation } from "@/components/RecommendationDisplay";
 
 // Tabelas de risco simplificadas
@@ -9,6 +9,13 @@ const AGE_RISK_TABLE: Record<string, number> = {
   "46-55": 1.6,
   "56-65": 2.2,
   "66+": 3.0
+};
+
+// Custos educacionais por tipo (valores atuais em R$)
+const EDUCATION_COSTS: Record<string, number> = {
+  "medio": 25000,     // Ensino médio particular
+  "tecnico": 35000,   // Curso técnico
+  "superior": 120000  // Ensino superior particular
 };
 
 const HEALTH_RISK_MULTIPLIER: Record<string, number> = {
@@ -80,10 +87,20 @@ export class InsuranceCalculatorService {
     const replacementRate = 0.70; // 70% da renda
     let yearsOfSupport = 0;
     
-    if (clientData.hasDependents) {
-      // Estimar anos até independência dos dependentes
+    if (clientData.hasDependents && clientData.dependentsData?.length) {
+      // Calcular anos até independência baseado nos dependentes reais
+      const maxYearsToIndependence = Math.max(...clientData.dependentsData.map(dep => {
+        // Independência quando terminar os estudos + 2 anos para se estabelecer
+        const ageAtEducationComplete = dep.age + dep.yearsUntilEducationComplete;
+        const ageAtIndependence = ageAtEducationComplete + 2;
+        return Math.max(ageAtIndependence - dep.age, 5); // Mínimo 5 anos de suporte
+      }));
+      
+      yearsOfSupport = maxYearsToIndependence;
+    } else if (clientData.hasDependents) {
+      // Fallback para método anterior quando não há dados detalhados
       const averageAgeToIndependence = 25;
-      const currentAverageAge = 15; // Estimativa
+      const currentAverageAge = 15;
       yearsOfSupport = Math.max(averageAgeToIndependence - currentAverageAge, 10);
     } else if (clientData.estadoCivil === 'casado' || clientData.estadoCivil === 'uniao_estavel') {
       yearsOfSupport = 10; // Suporte ao cônjuge
@@ -100,11 +117,34 @@ export class InsuranceCalculatorService {
     return 0;
   }
   
-  // Cálculo de custos educacionais
+  // Cálculo de custos educacionais baseado em dados detalhados dos dependentes
   private calculateEducationCosts(clientData: ClientData): number {
     if (!clientData.hasDependents) return 0;
     
-    const costPerChild = 150000; // R$ 150k por filho (ensino superior)
+    // Se temos dados detalhados dos dependentes, usar cálculo preciso
+    if (clientData.dependentsData?.length) {
+      const educationInflation = 0.06; // 6% ao ano
+      let totalEducationCosts = 0;
+      
+      clientData.dependentsData.forEach(dependent => {
+        const baseCost = EDUCATION_COSTS[dependent.educationType] || EDUCATION_COSTS.superior;
+        const yearsUntilEducation = dependent.yearsUntilEducationComplete;
+        
+        // Valor futuro ajustado pela inflação educacional
+        const inflatedCost = baseCost * Math.pow(1 + educationInflation, yearsUntilEducation);
+        
+        // Valor presente do custo futuro (desconto de 4% ao ano)
+        const discountRate = 0.04;
+        const presentValue = inflatedCost / Math.pow(1 + discountRate, yearsUntilEducation);
+        
+        totalEducationCosts += presentValue;
+      });
+      
+      return totalEducationCosts;
+    }
+    
+    // Fallback para método anterior quando não há dados detalhados
+    const costPerChild = 120000; // R$ 120k por filho (ensino superior)
     const educationInflation = 0.06; // 6% ao ano
     const yearsToCollege = 8; // Média de anos até faculdade
     
@@ -201,7 +241,17 @@ export class InsuranceCalculatorService {
       justification += `Incluímos quitação de dívidas (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(clientData.currentDebts)}), `;
     }
     
-    justification += `despesas imediatas e ${clientData.hasDependents ? 'custos educacionais dos dependentes' : 'reservas para gastos futuros'}. `;
+    if (clientData.hasDependents && clientData.dependentsData?.length) {
+      const educationCosts = this.calculateEducationCosts(clientData);
+      const dependentsInfo = clientData.dependentsData.map(dep => 
+        `${dep.age} anos (${dep.educationType}, ${dep.yearsUntilEducationComplete} anos restantes)`
+      ).join(', ');
+      justification += `custos educacionais detalhados para dependentes (${dependentsInfo}) no valor de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(educationCosts)}, `;
+    } else if (clientData.hasDependents) {
+      justification += `custos educacionais estimados para ${clientData.dependentsCount} dependente(s), `;
+    } else {
+      justification += `reservas para gastos futuros, `;
+    }
     
     if (existingAssets > 0) {
       justification += `Consideramos seus investimentos e reservas existentes de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(existingAssets)} no cálculo.`;

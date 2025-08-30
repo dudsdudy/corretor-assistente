@@ -24,6 +24,7 @@ export type Database = {
           created_at: string
           current_debts: number | null
           dependents_count: number | null
+          dependents_data: Json | null
           existing_insurance: boolean | null
           has_dependents: boolean | null
           health_status: string | null
@@ -44,6 +45,7 @@ export type Database = {
           created_at?: string
           current_debts?: number | null
           dependents_count?: number | null
+          dependents_data?: Json | null
           existing_insurance?: boolean | null
           has_dependents?: boolean | null
           health_status?: string | null
@@ -64,6 +66,7 @@ export type Database = {
           created_at?: string
           current_debts?: number | null
           dependents_count?: number | null
+          dependents_data?: Json | null
           existing_insurance?: boolean | null
           has_dependents?: boolean | null
           health_status?: string | null
