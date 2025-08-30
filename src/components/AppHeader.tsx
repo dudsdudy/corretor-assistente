@@ -11,7 +11,8 @@ import {
   Kanban, 
   Settings,
   Menu,
-  Home
+  Home,
+  CreditCard
 } from "lucide-react";
 import NotificationBadge from "@/components/NotificationBadge";
 
@@ -53,6 +54,11 @@ const AppHeader = ({
       icon: Kanban, 
       label: "Gestão de Vendas", 
       path: "/sales" 
+    },
+    { 
+      icon: CreditCard, 
+      label: "Preços", 
+      path: "/pricing" 
     },
     { 
       icon: Settings, 
