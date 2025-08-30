@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Shield, 
@@ -13,7 +16,10 @@ import {
   FileText,
   TrendingUp,
   Calendar,
-  Settings
+  Settings,
+  Plus,
+  RefreshCw,
+  Crown
 } from "lucide-react";
 import { User } from '@supabase/supabase-js';
 
@@ -31,6 +37,9 @@ interface UserData {
   created_at: string;
   last_sign_in_at: string;
   analysesCount: number;
+  free_studies_used: number;
+  free_studies_limit: number;
+  is_premium: boolean;
 }
 
 const Admin = () => {
@@ -44,6 +53,8 @@ const Admin = () => {
   });
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [newStudiesLimit, setNewStudiesLimit] = useState<number>(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -126,7 +137,10 @@ const Admin = () => {
           full_name: profile.full_name || 'Sem nome',
           created_at: profile.created_at,
           last_sign_in_at: profile.updated_at, // Using updated_at as proxy
-          analysesCount: analysesData.filter(a => a.broker_id === profile.user_id).length
+          analysesCount: analysesData.filter(a => a.broker_id === profile.user_id).length,
+          free_studies_used: profile.free_studies_used || 0,
+          free_studies_limit: profile.free_studies_limit || 3,
+          is_premium: profile.is_premium || false
         }));
 
         setUsers(usersWithCounts);
@@ -155,9 +169,65 @@ const Admin = () => {
         title: "Usuário promovido",
         description: "Usuário agora tem privilégios de administrador.",
       });
+
+      loadAdminData(); // Refresh data
     } catch (error: any) {
       toast({
         title: "Erro ao promover usuário",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const grantMoreStudies = async (userId: string, newLimit: number) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          free_studies_limit: newLimit
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Estudos concedidos",
+        description: `Limite de estudos atualizado para ${newLimit}.`,
+      });
+
+      setSelectedUser(null);
+      setNewStudiesLimit(0);
+      loadAdminData(); // Refresh data
+    } catch (error: any) {
+      toast({
+        title: "Erro ao conceder estudos",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetStudiesUsed = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          free_studies_used: 0
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Estudos resetados",
+        description: "Contador de estudos usados foi zerado.",
+      });
+
+      loadAdminData(); // Refresh data
+    } catch (error: any) {
+      toast({
+        title: "Erro ao resetar estudos",
         description: error.message,
         variant: "destructive",
       });
@@ -298,7 +368,9 @@ const Admin = () => {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Estudos</TableHead>
+                    <TableHead>Estudos Feitos</TableHead>
+                    <TableHead>Estudos Disponíveis</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Cadastro</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
@@ -317,8 +389,31 @@ const Admin = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant={userData.analysesCount > 0 ? "default" : "secondary"}>
-                          {userData.analysesCount} estudos
+                          {userData.analysesCount}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={userData.free_studies_used >= userData.free_studies_limit ? "destructive" : "outline"}>
+                            {userData.free_studies_used}/{userData.free_studies_limit}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            Restam: {userData.free_studies_limit - userData.free_studies_used}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {userData.is_premium && (
+                            <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                              <Crown className="h-3 w-3 mr-1" />
+                              Premium
+                            </Badge>
+                          )}
+                          {!userData.is_premium && (
+                            <Badge variant="secondary">Gratuito</Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <p className="text-sm">
@@ -327,13 +422,73 @@ const Admin = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedUser(userData);
+                                  setNewStudiesLimit(userData.free_studies_limit);
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Conceder
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Conceder Estudos</DialogTitle>
+                                <DialogDescription>
+                                  Ajuste o limite de estudos gratuitos para {userData.full_name}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="studies-limit" className="text-right">
+                                    Novo Limite
+                                  </Label>
+                                  <Input
+                                    id="studies-limit"
+                                    type="number"
+                                    value={newStudiesLimit}
+                                    onChange={(e) => setNewStudiesLimit(parseInt(e.target.value) || 0)}
+                                    className="col-span-3"
+                                    min="0"
+                                  />
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  Limite atual: {userData.free_studies_limit} | 
+                                  Usado: {userData.free_studies_used}
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button
+                                  onClick={() => selectedUser && grantMoreStudies(selectedUser.id, newStudiesLimit)}
+                                >
+                                  Confirmar
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => resetStudiesUsed(userData.id)}
+                            disabled={userData.free_studies_used === 0}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Reset
+                          </Button>
+                          
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => makeUserAdmin(userData.id)}
                           >
                             <Settings className="h-4 w-4 mr-2" />
-                            Tornar Admin
+                            Admin
                           </Button>
                         </div>
                       </TableCell>
