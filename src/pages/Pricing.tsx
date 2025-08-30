@@ -69,8 +69,16 @@ const Pricing = () => {
             Escolha o Plano Ideal
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transforme sua corretora com nossa plataforma profissional de cálculos de seguro de vida
+            Ative o turbo para a recorrência em suas vendas com nossa plataforma profissional
           </p>
+          <div className="bg-primary/10 rounded-lg p-4 mt-6 max-w-md mx-auto">
+            <p className="text-sm font-medium text-primary">
+              💡 Com 10 estudos por dia, você economiza até 40 horas semanais!
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Mais tempo para fechar vendas e conquistar novos clientes
+            </p>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8 items-start">
