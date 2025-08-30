@@ -39,6 +39,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [inputMode, setInputMode] = useState<"choice" | "voice" | "form" | "results">("choice");
   const [analysis, setAnalysis] = useState<ClientAnalysis | null>(null);
+  const [originalClientData, setOriginalClientData] = useState<ClientData | null>(null);
   const [processingAnalysis, setProcessingAnalysis] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const navigate = useNavigate();
@@ -91,10 +92,15 @@ const Index = () => {
 
     setProcessingAnalysis(true);
     
+    // Store the client data for later use
+    setOriginalClientData(clientData);
+    console.log("Processando análise para cliente:", clientData);
+    
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     const analysisResult = generateMockAnalysis(clientData);
+    console.log("Análise gerada:", analysisResult);
     
     // Increment study count
     const canContinue = await freeTrialStatus.incrementStudyCount();
@@ -175,7 +181,9 @@ const Index = () => {
   };
 
   const handleVoiceTranscript = (transcript: string) => {
+    console.log("Transcrição recebida:", transcript);
     const clientData = extractClientDataFromTranscript(transcript);
+    console.log("Dados extraídos do cliente:", clientData);
     
     toast({
       title: "Dados extraídos da voz",
@@ -186,38 +194,26 @@ const Index = () => {
   };
 
   const handleSaveAnalysis = async () => {
-    if (!analysis || !user) return;
+    if (!analysis || !user || !originalClientData) return;
     
     try {
-      // Extract client data from mock data or form
-      const mockClientData: ClientData = {
-        name: analysis.clientName,
-        age: 35, // Default mock values
-        gender: "masculino",
-        profession: "Engenheiro",
-        monthlyIncome: 8000,
-        hasDependents: true,
-        dependentsCount: 2,
-        currentDebts: 0,
-        healthStatus: "excelente",
-        existingInsurance: false
-      };
+      // Use the actual client data that was used to generate the analysis
 
       const { error } = await supabase
         .from('client_analyses')
         .insert({
           broker_id: user.id,
           client_name: analysis.clientName,
-          client_age: mockClientData.age,
-          monthly_income: mockClientData.monthlyIncome,
+          client_age: originalClientData.age,
+          monthly_income: originalClientData.monthlyIncome,
           risk_profile: analysis.riskProfile,
-          client_gender: mockClientData.gender,
-          client_profession: mockClientData.profession,
-          health_status: mockClientData.healthStatus,
-          has_dependents: mockClientData.hasDependents,
-          dependents_count: mockClientData.dependentsCount,
-          current_debts: mockClientData.currentDebts,
-          existing_insurance: mockClientData.existingInsurance,
+          client_gender: originalClientData.gender,
+          client_profession: originalClientData.profession,
+          health_status: originalClientData.healthStatus,
+          has_dependents: originalClientData.hasDependents,
+          dependents_count: originalClientData.dependentsCount,
+          current_debts: originalClientData.currentDebts,
+          existing_insurance: originalClientData.existingInsurance,
           recommended_coverage: analysis.recommendedCoverages as any,
           justifications: { summary: analysis.summary } as any,
           status: 'novo'
@@ -241,20 +237,100 @@ const Index = () => {
   const handleGeneratePDF = async () => {
     const element = document.getElementById('proposal-content');
     if (!element) return;
+    
     try {
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      // Adiciona classe para PDF antes de capturar
+      element.classList.add('print-layout');
+      document.body.classList.add('printing');
+      
+      // Configurações otimizadas para PDF
+      const canvas = await html2canvas(element, { 
+        scale: 1.5, 
+        useCORS: true, 
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        windowWidth: 1200,
+        windowHeight: element.scrollHeight
+      });
+      
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      // Configuração do PDF otimizada
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+      
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const availableWidth = pageWidth - (margin * 2);
+      const availableHeight = pageHeight - (margin * 2);
+      
       const imgProps = { width: canvas.width, height: canvas.height };
-      const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+      const ratio = Math.min(availableWidth / imgProps.width, availableHeight / imgProps.height);
       const imgWidth = imgProps.width * ratio;
       const imgHeight = imgProps.height * ratio;
-      pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, 10, imgWidth, imgHeight);
-      pdf.save(`proposta_${analysis?.clientName || 'cliente'}.pdf`);
+      
+      // Se a imagem for muito alta, dividir em páginas
+      if (imgHeight > availableHeight) {
+        let currentY = 0;
+        let pageNumber = 1;
+        
+        while (currentY < imgHeight) {
+          if (pageNumber > 1) {
+            pdf.addPage();
+          }
+          
+          const remainingHeight = Math.min(availableHeight, imgHeight - currentY);
+          
+          pdf.addImage(
+            imgData, 
+            'PNG', 
+            margin, 
+            margin, 
+            imgWidth, 
+            remainingHeight
+          );
+          
+          currentY += availableHeight;
+          pageNumber++;
+        }
+      } else {
+        // Centralizar na página se couber
+        const xPos = (pageWidth - imgWidth) / 2;
+        const yPos = margin;
+        
+        pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
+      }
+      
+      // Remove classes após captura
+      element.classList.remove('print-layout');
+      document.body.classList.remove('printing');
+      
+      const fileName = `proposta_${analysis?.clientName?.replace(/[^a-zA-Z0-9]/g, '_') || 'cliente'}_${new Date().getTime()}.pdf`;
+      pdf.save(fileName);
+      
+      toast({
+        title: "PDF gerado com sucesso!",
+        description: `Arquivo ${fileName} baixado.`,
+      });
+      
     } catch (e: any) {
-      toast({ title: 'Erro ao gerar PDF', description: e.message, variant: 'destructive' });
+      // Remove classes em caso de erro
+      element?.classList.remove('print-layout');
+      document.body.classList.remove('printing');
+      
+      console.error('Erro ao gerar PDF:', e);
+      toast({ 
+        title: 'Erro ao gerar PDF', 
+        description: 'Tente novamente ou use o botão direito do mouse para imprimir como PDF.', 
+        variant: 'destructive' 
+      });
     }
   };
 

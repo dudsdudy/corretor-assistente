@@ -180,3 +180,124 @@
     box-shadow: var(--shadow-medium);
   }
 }
+
+@layer utilities {
+  /* Custom utility classes */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-success {
+    background: var(--gradient-success);
+  }
+  
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .bg-gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .shadow-strong {
+    box-shadow: var(--shadow-strong);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+
+  /* Print and PDF optimization styles */
+  .print-layout {
+    @apply max-w-full;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .print-layout .text-3xl {
+    font-size: 1.8rem !important;
+  }
+  
+  .print-layout .text-2xl {
+    font-size: 1.5rem !important;
+  }
+  
+  .print-layout .text-xl {
+    font-size: 1.2rem !important;
+  }
+  
+  .print-layout .text-lg {
+    font-size: 1.1rem !important;
+  }
+
+  .print-layout .p-6 {
+    padding: 1rem !important;
+  }
+  
+  .print-layout .p-4 {
+    padding: 0.75rem !important;
+  }
+  
+  .print-layout .p-3 {
+    padding: 0.5rem !important;
+  }
+
+  .print-layout .space-y-6 > * + * {
+    margin-top: 1rem !important;
+  }
+  
+  .print-layout .space-y-4 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  .print-layout .mb-6 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .print-layout .mb-4 {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .print-layout .shadow-strong,
+  .print-layout .shadow-medium,
+  .print-layout .shadow-soft {
+    box-shadow: none !important;
+    border: 1px solid hsl(var(--border)) !important;
+  }
+
+  .print-layout .bg-gradient-hero,
+  .print-layout .bg-gradient-card {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+  }
+
+  .print-layout .text-primary-foreground {
+    color: white !important;
+  }
+}
+
+body.printing {
+  overflow: hidden;
+}
+
+body.printing * {
+  -webkit-print-color-adjust: exact !important;
+  color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
