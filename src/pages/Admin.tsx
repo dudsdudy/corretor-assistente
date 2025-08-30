@@ -19,7 +19,10 @@ import {
   Settings,
   Plus,
   RefreshCw,
-  Crown
+  Crown,
+  Minus,
+  ToggleLeft,
+  ToggleRight
 } from "lucide-react";
 import { User } from '@supabase/supabase-js';
 
@@ -202,6 +205,67 @@ const Admin = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao conceder estudos",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const adjustStudiesLimit = async (userId: string, increment: boolean) => {
+    try {
+      const currentUser = users.find(u => u.id === userId);
+      if (!currentUser) return;
+
+      const newLimit = increment 
+        ? currentUser.free_studies_limit + 1 
+        : Math.max(0, currentUser.free_studies_limit - 1);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          free_studies_limit: newLimit
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: increment ? "Estudo adicionado" : "Estudo removido",
+        description: `Novo limite: ${newLimit} estudos.`,
+      });
+
+      loadAdminData(); // Refresh data
+    } catch (error: any) {
+      toast({
+        title: "Erro ao ajustar estudos",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const togglePremiumStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_premium: !currentStatus,
+          subscription_status: !currentStatus ? 'active' : 'free_trial',
+          subscription_plan: !currentStatus ? 'pro' : null
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: currentStatus ? "Usuário alterado para FREE" : "Usuário promovido para PRO",
+        description: `Status premium ${!currentStatus ? 'ativado' : 'desativado'}.`,
+      });
+
+      loadAdminData(); // Refresh data
+    } catch (error: any) {
+      toast({
+        title: "Erro ao alterar status",
         description: error.message,
         variant: "destructive",
       });
@@ -400,6 +464,24 @@ const Admin = () => {
                           <span className="text-xs text-muted-foreground">
                             Restam: {userData.free_studies_limit - userData.free_studies_used}
                           </span>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => adjustStudiesLimit(userData.id, false)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => adjustStudiesLimit(userData.id, true)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -413,6 +495,19 @@ const Admin = () => {
                           {!userData.is_premium && (
                             <Badge variant="secondary">Gratuito</Badge>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => togglePremiumStatus(userData.id, userData.is_premium)}
+                            className="h-6 w-6 p-0"
+                            title={userData.is_premium ? "Alterar para FREE" : "Promover para PRO"}
+                          >
+                            {userData.is_premium ? (
+                              <ToggleRight className="h-4 w-4 text-orange-500" />
+                            ) : (
+                              <ToggleLeft className="h-4 w-4 text-gray-400" />
+                            )}
+                          </Button>
                         </div>
                       </TableCell>
                       <TableCell>
