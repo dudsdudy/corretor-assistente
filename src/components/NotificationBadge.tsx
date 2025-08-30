@@ -35,11 +35,11 @@ const NotificationBadge = () => {
 
   return (
     <div className="relative group">
-      <div className="relative p-2 rounded-lg bg-warning/10 border border-warning/20 hover:bg-warning/15 transition-colors">
+      <div className="relative p-2 rounded-full bg-warning/10 border border-warning/20 hover:bg-warning/15 transition-all duration-200 cursor-pointer shadow-sm">
         <Bell className="h-5 w-5 text-warning" />
         <Badge 
           variant="destructive" 
-          className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+          className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs font-bold animate-pulse"
         >
           {untreatedLeads > 9 ? "9+" : untreatedLeads}
         </Badge>

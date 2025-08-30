@@ -18,6 +18,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from '@supabase/supabase-js';
 import AppHeader from "@/components/AppHeader";
+import LeadHistoryDialog from "@/components/LeadHistoryDialog";
 
 interface ClientAnalysis {
   id: string;
@@ -37,6 +38,8 @@ const Leads = () => {
   const [analyses, setAnalyses] = useState<ClientAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [selectedAnalysis, setSelectedAnalysis] = useState<ClientAnalysis | null>(null);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -320,12 +323,10 @@ const Leads = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              // TODO: Implementar visualização detalhada
-                              toast({
-                                title: "Em breve",
-                                description: "Visualização detalhada será implementada em breve."
-                              });
+                              setSelectedAnalysis(analysis);
+                              setIsHistoryDialogOpen(true);
                             }}
+                            title="Ver histórico do estudo"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -347,6 +348,12 @@ const Leads = () => {
           </CardContent>
         </Card>
       </div>
+
+      <LeadHistoryDialog
+        isOpen={isHistoryDialogOpen}
+        onClose={() => setIsHistoryDialogOpen(false)}
+        analysis={selectedAnalysis}
+      />
     </div>
   );
 };
