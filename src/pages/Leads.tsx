@@ -13,8 +13,10 @@ import {
   Calendar,
   Eye,
   Trash2,
-  Filter
+  Filter,
+  Download
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from '@supabase/supabase-js';
 import AppHeader from "@/components/AppHeader";
@@ -155,6 +157,43 @@ const Leads = () => {
     return colors[status] || 'bg-gray-500';
   };
 
+  // Calcula o prêmio total mensal somando os prêmios das coberturas armazenadas
+  const computeTotalMonthlyPremium = (analysis: ClientAnalysis): number => {
+    const rc = analysis.recommended_coverage as any;
+    let total = 0;
+    if (!rc) return 0;
+    if (Array.isArray(rc)) {
+      for (const c of rc) {
+        const v = (c as any).monthly_premium ?? (c as any).monthlyPremium ?? 0;
+        total += Number(v) || 0;
+      }
+    } else if (typeof rc === 'object') {
+      for (const key of Object.keys(rc)) {
+        const item: any = rc[key];
+        const v = item?.monthly_premium ?? item?.monthlyPremium ?? 0;
+        total += Number(v) || 0;
+      }
+    }
+    return total;
+  };
+
+  // Exporta relatório Excel com resumo por prêmio
+  const exportToExcel = () => {
+    const rows = (statusFilter === "todos" ? analyses : filteredAnalyses).map(a => {
+      const totalPremium = computeTotalMonthlyPremium(a);
+      return {
+        Cliente: a.client_name,
+        Status: getStatusLabel(a.status),
+        Data: new Date(a.created_at).toLocaleDateString('pt-BR'),
+        PremioTotalMensal: Number(totalPremium.toFixed(2))
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Leads");
+    XLSX.writeFile(wb, `leads_premios_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   const filteredAnalyses = statusFilter === "todos" 
     ? analyses 
     : analyses.filter(analysis => analysis.status === statusFilter);
@@ -173,7 +212,7 @@ const Leads = () => {
       
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Filters */}
-        <div className="flex items-center justify-end gap-4 mb-8">
+        <div className="flex items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -191,6 +230,10 @@ const Leads = () => {
               </SelectContent>
             </Select>
           </div>
+          <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Exportar Excel (Prêmios)
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -269,7 +312,7 @@ const Leads = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Cliente</TableHead>
-                    <TableHead>Perfil</TableHead>
+                    <TableHead>Prêmio Mensal</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Ações</TableHead>
@@ -288,7 +331,9 @@ const Leads = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{analysis.risk_profile}</Badge>
+                        <span className="font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(computeTotalMonthlyPremium(analysis))}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <Select

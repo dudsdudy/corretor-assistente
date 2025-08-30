@@ -2,6 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { 
   User, 
   Briefcase, 
@@ -20,7 +23,60 @@ interface LeadHistoryDialogProps {
 }
 
 const LeadHistoryDialog = ({ isOpen, onClose, analysis }: LeadHistoryDialogProps) => {
-  if (!analysis) return null;
+if (!analysis) return null;
+
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const isExpired = new Date(analysis.created_at).getTime() + sevenDaysMs < Date.now();
+
+  const buildRecommendedCoverages = () => {
+    const rc = analysis.recommended_coverage;
+    if (Array.isArray(rc)) return rc;
+    if (rc && typeof rc === 'object') {
+      return Object.entries(rc).map(([key, val]: [string, any]) => ({
+        type: key.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+        amount: Number((val as any).value) || 0,
+        justification: (val as any).description || '',
+        priority: 'medium'
+      }));
+    }
+    return [];
+  };
+
+  const handleRecover = () => {
+    try {
+      const payload = {
+        type: 'recovered',
+        timestamp: Date.now(),
+        clientAnalysis: {
+          clientName: analysis.client_name,
+          riskProfile: analysis.risk_profile,
+          recommendedCoverages: buildRecommendedCoverages(),
+          summary: analysis.justifications?.summary || '',
+          analysisDetails: {}
+        },
+        originalClientData: {
+          name: analysis.client_name,
+          age: analysis.client_age || 0,
+          gender: analysis.client_gender || '',
+          profession: analysis.client_profession || '',
+          monthlyIncome: Number(analysis.monthly_income) || 0,
+          hasDependents: !!analysis.has_dependents,
+          dependentsCount: analysis.dependents_count || 0,
+          currentDebts: Number(analysis.current_debts) || 0,
+          healthStatus: analysis.health_status || '',
+          existingInsurance: !!analysis.existing_insurance
+        }
+      };
+      localStorage.setItem('recoveredAnalysis', JSON.stringify(payload));
+      onClose();
+      navigate('/');
+      toast({ title: 'Estudo recuperado', description: 'O estudo foi carregado na tela principal.' });
+    } catch (e) {
+      toast({ title: 'Falha ao recuperar estudo', variant: 'destructive' });
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -246,6 +302,20 @@ const LeadHistoryDialog = ({ isOpen, onClose, analysis }: LeadHistoryDialogProps
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="flex items-center justify-between mt-4">
+          <div>
+            {isExpired ? (
+              <Badge variant="destructive">Cotação expirada - necessário novo estudo</Badge>
+            ) : (
+              <Badge variant="secondary">Válido até {new Date(new Date(analysis.created_at).getTime() + sevenDaysMs).toLocaleDateString('pt-BR')}</Badge>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>Fechar</Button>
+            <Button onClick={handleRecover} disabled={isExpired}>Recuperar estudo</Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

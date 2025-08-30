@@ -147,6 +147,27 @@ const Sales = () => {
     return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
+  const formatCurrencyBRL = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+  const computeTotalMonthlyPremium = (analysis: ClientAnalysis): number => {
+    const rc: any = analysis.recommended_coverage;
+    let total = 0;
+    if (!rc) return 0;
+    if (Array.isArray(rc)) {
+      for (const c of rc) {
+        const v = (c as any).monthly_premium ?? (c as any).monthlyPremium ?? 0;
+        total += Number(v) || 0;
+      }
+    } else if (typeof rc === 'object') {
+      for (const key of Object.keys(rc)) {
+        const item: any = rc[key];
+        const v = item?.monthly_premium ?? item?.monthlyPremium ?? 0;
+        total += Number(v) || 0;
+      }
+    }
+    return total;
+  };
+
   const kanbanColumns = [
     { id: 'novo', title: 'Novos Leads', color: 'bg-blue-50 border-blue-200' },
     { id: 'contato', title: 'Primeiro Contato', color: 'bg-yellow-50 border-yellow-200' },
@@ -271,7 +292,8 @@ const Sales = () => {
                       <CardContent className="pt-0">
                         <div className="space-y-2 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-xs">{analysis.risk_profile}</Badge>
+                            <DollarSign className="h-3 w-3" />
+                            <span className="text-xs font-medium">{formatCurrencyBRL(computeTotalMonthlyPremium(analysis))}</span>
                           </div>
                           {analysis.client_age && (
                             <p>{analysis.client_age} anos • {analysis.client_profession}</p>

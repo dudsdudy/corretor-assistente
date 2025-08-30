@@ -91,7 +91,8 @@ const AppHeader = ({
         
         <div className="flex items-center gap-2">
           {!isMobile ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <NotificationBadge />
               {menuItems.map((item) => (
                 <Button 
                   key={item.path}
@@ -102,7 +103,6 @@ const AppHeader = ({
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
-                  {item.badge && <NotificationBadge />}
                 </Button>
               ))}
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
@@ -128,7 +128,6 @@ const AppHeader = ({
                     >
                       <item.icon className="h-4 w-4" />
                       {item.label}
-                      {item.badge && <NotificationBadge />}
                     </Button>
                   ))}
                   <Button 

@@ -75,6 +75,23 @@ const Index = () => {
     }
   }, [session, loading, navigate]);
 
+  // Carrega estudo recuperado do painel de leads, se existir
+  useEffect(() => {
+    try {
+      const recovered = localStorage.getItem('recoveredAnalysis');
+      if (recovered) {
+        const payload = JSON.parse(recovered);
+        setAnalysis(payload.clientAnalysis);
+        setOriginalClientData(payload.originalClientData || null);
+        setInputMode('results');
+        localStorage.removeItem('recoveredAnalysis');
+        toast({ title: 'Estudo recuperado', description: 'O estudo foi carregado com sucesso.' });
+      }
+    } catch (e) {
+      console.warn('Falha ao carregar estudo recuperado', e);
+    }
+  }, []);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
