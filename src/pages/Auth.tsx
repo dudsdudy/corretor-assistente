@@ -18,6 +18,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [insuranceCompany, setInsuranceCompany] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -77,22 +78,42 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // Salvar dados adicionais do perfil
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            insurance_company: insuranceCompany,
-            cpf_cnpj: cpfCnpj,
-            birth_date: birthDate,
-            insurance_types: insuranceTypes
-          })
-          .eq('user_id', data.user.id);
+        // Salvar dados adicionais do perfil e disparar webhook
+        if (data.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              phone_number: phoneNumber,
+              insurance_company: insuranceCompany,
+              cpf_cnpj: cpfCnpj,
+              birth_date: birthDate,
+              insurance_types: insuranceTypes
+            })
+            .eq('user_id', data.user.id);
 
-        if (profileError) {
-          console.error('Error updating profile:', profileError);
+          if (profileError) {
+            console.error('Error updating profile:', profileError);
+          } else {
+            // Disparar webhook de usuário registrado
+            try {
+              const { error: webhookError } = await supabase.functions.invoke('user-registered-webhook', {
+                body: {
+                  userId: data.user.id,
+                  userEmail: data.user.email,
+                  fullName: fullName,
+                  phoneNumber: phoneNumber,
+                  insuranceCompany: insuranceCompany
+                }
+              });
+
+              if (webhookError) {
+                console.error('Webhook error:', webhookError);
+              }
+            } catch (error) {
+              console.error('Error invoking webhook:', error);
+            }
+          }
         }
-      }
 
       toast({
         title: "Cadastro realizado com sucesso!",
@@ -221,6 +242,21 @@ const Auth = () => {
                       onChange={(e) => setFullName(e.target.value)}
                       required
                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber">WhatsApp (com DDD)</Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      placeholder="(11) 99999-9999"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      💬 Usado para notificações automáticas e suporte via WhatsApp
+                    </p>
                   </div>
                   
                   <div className="space-y-2">
