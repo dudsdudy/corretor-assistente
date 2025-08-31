@@ -17,7 +17,9 @@ import {
   Home,
   CreditCard,
   Crown,
-  User2
+  User2,
+  Bell,
+  ChevronDown
 } from "lucide-react";
 import NotificationBadge from "@/components/NotificationBadge";
 
@@ -27,6 +29,8 @@ interface MenuItem {
   path: string;
   badge?: boolean;
   isPro?: boolean;
+  category?: 'navigation' | 'business' | 'admin' | 'user';
+  priority?: number;
 }
 
 interface AppHeaderProps {
@@ -92,50 +96,74 @@ const AppHeader = ({
     navigate("/auth");
   };
 
-  const menuItems = [
+  // Organizar itens por categoria e prioridade
+  const navigationItems = [
     { 
       icon: Home, 
       label: "Início", 
-      path: "/" 
-    },
+      path: "/",
+      category: 'navigation' as const,
+      priority: 1
+    }
+  ];
+
+  const businessItems = [
     { 
       icon: Database, 
-      label: "Painel de Leads", 
+      label: "Leads", 
       path: "/leads",
-      badge: true
+      badge: true,
+      category: 'business' as const,
+      priority: 2
     },
     { 
       icon: Kanban, 
-      label: "Gestão de Vendas", 
-      path: "/sales" 
-    },
+      label: "Vendas", 
+      path: "/sales",
+      category: 'business' as const,
+      priority: 3
+    }
+  ];
+
+  const adminItems = isAdmin ? [
+    {
+      icon: User2,
+      label: "Admin",
+      path: "/admin",
+      category: 'admin' as const,
+      priority: 5
+    }
+  ] : [];
+
+  const userItems = [
     ...(freeTrialStatus.isPremium ? [
       {
         icon: Crown,
-        label: "Usuário PRO",
+        label: "PRO",
         path: "/settings",
-        isPro: true
+        isPro: true,
+        category: 'user' as const,
+        priority: 6
       }
     ] : [
       {
         icon: CreditCard, 
-        label: "Preços", 
-        path: "/pricing"
+        label: "Upgrade", 
+        path: "/pricing",
+        category: 'user' as const,
+        priority: 6
       }
     ]),
-    ...(isAdmin ? [
-      {
-        icon: User2,
-        label: "Administração",
-        path: "/admin"
-      }
-    ] : []),
     { 
       icon: Settings, 
-      label: "Configurações", 
-      path: "/settings" 
+      label: "Config", 
+      path: "/settings",
+      category: 'user' as const,
+      priority: 7
     }
   ];
+
+  const allMenuItems = [...navigationItems, ...businessItems, ...adminItems, ...userItems];
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -168,7 +196,8 @@ const AppHeader = ({
             </div>
             
             {!isMobile && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
+                {/* Contador de estudos */}
                 {!freeTrialStatus.loading && user && (
                   <FreeTrialCounter
                     studiesUsed={freeTrialStatus.studiesUsed}
@@ -178,62 +207,177 @@ const AppHeader = ({
                     variant="header"
                   />
                 )}
-                <div className="flex items-center gap-3">
-                  <NotificationBadge />
-                  {menuItems.map((item) => (
+                
+                {/* Navegação principal */}
+                <div className="flex items-center gap-1">
+                  {navigationItems.map((item) => (
+                    <Button 
+                      key={item.path}
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleNavigation(item.path)}
+                      className="flex items-center gap-1 px-3"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="hidden lg:inline">{item.label}</span>
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Ferramentas de negócio */}
+                <div className="flex items-center gap-1 border-l pl-3 border-border/50">
+                  {businessItems.map((item) => (
+                    <Button 
+                      key={item.path}
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleNavigation(item.path)}
+                      className="flex items-center gap-1 px-3 relative"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="hidden lg:inline">{item.label}</span>
+                      {item.badge && <NotificationBadge />}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Admin e usuário */}
+                <div className="flex items-center gap-1 border-l pl-3 border-border/50">
+                  {adminItems.map((item) => (
+                    <Button 
+                      key={item.path}
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={() => handleNavigation(item.path)}
+                      className="flex items-center gap-1 px-3"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="hidden xl:inline">{item.label}</span>
+                    </Button>
+                  ))}
+                  
+                  {userItems.map((item) => (
                     <Button 
                       key={item.path}
                       variant={item.isPro ? "default" : "ghost"} 
                       size="sm" 
-                      onClick={() => handleNavigation(item.path)} 
-                      className={`flex items-center gap-2 ${item.isPro ? 'bg-gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
+                      onClick={() => handleNavigation(item.path)}
+                      className={`flex items-center gap-1 px-3 ${item.isPro ? 'bg-gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
                     >
                       <item.icon className="h-4 w-4" />
-                      {item.label}
+                      <span className="hidden xl:inline">{item.label}</span>
                     </Button>
                   ))}
-                  <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sair
+
+                  <Button variant="ghost" size="sm" onClick={handleSignOut} className="ml-2">
+                    <LogOut className="h-4 w-4" />
+                    <span className="hidden xl:inline ml-1">Sair</span>
                   </Button>
                 </div>
               </div>
             )}
             
             {isMobile && (
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[280px]">
-                  <div className="flex flex-col space-y-4 mt-8">
-                    {menuItems.map((item) => (
-                      <Button 
-                        key={item.path}
-                        variant={item.isPro ? "default" : "ghost"} 
-                        onClick={() => handleNavigation(item.path)}
-                        className={`flex items-center gap-2 justify-start w-full ${item.isPro ? 'bg-gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </Button>
-                    ))}
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => {
-                        handleSignOut();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 justify-start w-full"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sair
+              <div className="flex items-center gap-2">
+                <NotificationBadge />
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="sm" className="relative">
+                      <Menu className="h-5 w-5" />
                     </Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[300px]">
+                    <div className="flex flex-col space-y-6 mt-8">
+                      
+                      {/* Navegação Principal */}
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium text-muted-foreground px-2">Navegação</h3>
+                        {navigationItems.map((item) => (
+                          <Button 
+                            key={item.path}
+                            variant="ghost" 
+                            onClick={() => handleNavigation(item.path)}
+                            className="flex items-center gap-3 justify-start w-full h-11 px-3"
+                          >
+                            <item.icon className="h-5 w-5" />
+                            <span className="font-medium">{item.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+
+                      {/* Ferramentas de Negócio */}
+                      <div className="space-y-2 border-t pt-4">
+                        <h3 className="text-sm font-medium text-muted-foreground px-2">Ferramentas</h3>
+                        {businessItems.map((item) => (
+                          <Button 
+                            key={item.path}
+                            variant="ghost" 
+                            onClick={() => handleNavigation(item.path)}
+                            className="flex items-center gap-3 justify-start w-full h-11 px-3 relative"
+                          >
+                            <item.icon className="h-5 w-5" />
+                            <span className="font-medium">{item.label}</span>
+                            {item.badge && (
+                              <div className="absolute right-3">
+                                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                              </div>
+                            )}
+                          </Button>
+                        ))}
+                      </div>
+
+                      {/* Administração */}
+                      {adminItems.length > 0 && (
+                        <div className="space-y-2 border-t pt-4">
+                          <h3 className="text-sm font-medium text-muted-foreground px-2">Administração</h3>
+                          {adminItems.map((item) => (
+                            <Button 
+                              key={item.path}
+                              variant="secondary" 
+                              onClick={() => handleNavigation(item.path)}
+                              className="flex items-center gap-3 justify-start w-full h-11 px-3"
+                            >
+                              <item.icon className="h-5 w-5" />
+                              <span className="font-medium">{item.label}</span>
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Configurações do Usuário */}
+                      <div className="space-y-2 border-t pt-4">
+                        <h3 className="text-sm font-medium text-muted-foreground px-2">Conta</h3>
+                        {userItems.map((item) => (
+                          <Button 
+                            key={item.path}
+                            variant={item.isPro ? "default" : "ghost"} 
+                            onClick={() => handleNavigation(item.path)}
+                            className={`flex items-center gap-3 justify-start w-full h-11 px-3 ${item.isPro ? 'bg-gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
+                          >
+                            <item.icon className="h-5 w-5" />
+                            <span className="font-medium">{item.label}</span>
+                            {item.isPro && (
+                              <Crown className="h-4 w-4 ml-auto" />
+                            )}
+                          </Button>
+                        ))}
+                        
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => {
+                            handleSignOut();
+                            setMobileMenuOpen(false);
+                          }}
+                          className="flex items-center gap-3 justify-start w-full h-11 px-3 text-destructive hover:text-destructive"
+                        >
+                          <LogOut className="h-5 w-5" />
+                          <span className="font-medium">Sair</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
             )}
           </div>
           
