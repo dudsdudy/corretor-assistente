@@ -144,91 +144,110 @@ const AppHeader = ({
 
   return (
     <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {showBackButton && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate(backPath)}
-              className="mr-2"
-            >
-              ← Voltar
-            </Button>
-          )}
-          <div className="p-2 bg-gradient-hero rounded-lg">
-            <Shield className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">{title}</h1>
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {!freeTrialStatus.loading && user && (
-            <FreeTrialCounter
-              studiesUsed={freeTrialStatus.studiesUsed}
-              studiesRemaining={freeTrialStatus.studiesRemaining}
-              studiesLimit={freeTrialStatus.studiesLimit}
-              isPremium={freeTrialStatus.isPremium}
-              variant="header"
-            />
-          )}
-          {!isMobile ? (
+      <div className="container mx-auto px-4">
+        <div className={`${isMobile ? 'flex flex-col gap-2 py-3' : 'flex items-center justify-between py-4'}`}>
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <NotificationBadge />
-              {menuItems.map((item) => (
+              {showBackButton && (
                 <Button 
-                  key={item.path}
-                  variant={item.isPro ? "default" : "ghost"} 
+                  variant="ghost" 
                   size="sm" 
-                  onClick={() => handleNavigation(item.path)} 
-                  className={`flex items-center gap-2 ${item.isPro ? 'bg-gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
+                  onClick={() => navigate(backPath)}
+                  className="mr-2"
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
+                  ← Voltar
                 </Button>
-              ))}
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
+              )}
+              <div className="p-2 bg-gradient-hero rounded-lg">
+                <Shield className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">{title}</h1>
+                <p className="text-xs text-muted-foreground">{subtitle}</p>
+              </div>
             </div>
-          ) : (
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[280px]">
-                <div className="flex flex-col space-y-4 mt-8">
+            
+            {!isMobile && (
+              <div className="flex items-center gap-2">
+                {!freeTrialStatus.loading && user && (
+                  <FreeTrialCounter
+                    studiesUsed={freeTrialStatus.studiesUsed}
+                    studiesRemaining={freeTrialStatus.studiesRemaining}
+                    studiesLimit={freeTrialStatus.studiesLimit}
+                    isPremium={freeTrialStatus.isPremium}
+                    variant="header"
+                  />
+                )}
+                <div className="flex items-center gap-3">
+                  <NotificationBadge />
                   {menuItems.map((item) => (
                     <Button 
                       key={item.path}
                       variant={item.isPro ? "default" : "ghost"} 
-                      onClick={() => handleNavigation(item.path)}
-                      className={`flex items-center gap-2 justify-start w-full ${item.isPro ? 'bg-gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
+                      size="sm" 
+                      onClick={() => handleNavigation(item.path)} 
+                      className={`flex items-center gap-2 ${item.isPro ? 'bg-gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
                     >
                       <item.icon className="h-4 w-4" />
                       {item.label}
                     </Button>
                   ))}
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => {
-                      handleSignOut();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2 justify-start w-full"
-                  >
-                    <LogOut className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
                     Sair
                   </Button>
                 </div>
-              </SheetContent>
-            </Sheet>
+              </div>
+            )}
+            
+            {isMobile && (
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px]">
+                  <div className="flex flex-col space-y-4 mt-8">
+                    {menuItems.map((item) => (
+                      <Button 
+                        key={item.path}
+                        variant={item.isPro ? "default" : "ghost"} 
+                        onClick={() => handleNavigation(item.path)}
+                        className={`flex items-center gap-2 justify-start w-full ${item.isPro ? 'bg-gradient-primary text-primary-foreground hover:opacity-90' : ''}`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Button>
+                    ))}
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        handleSignOut();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 justify-start w-full"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sair
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
+          </div>
+          
+          {/* Contador mobile em linha separada */}
+          {isMobile && !freeTrialStatus.loading && user && (
+            <div className="w-full flex justify-center">
+              <FreeTrialCounter
+                studiesUsed={freeTrialStatus.studiesUsed}
+                studiesRemaining={freeTrialStatus.studiesRemaining}
+                studiesLimit={freeTrialStatus.studiesLimit}
+                isPremium={freeTrialStatus.isPremium}
+                variant="header"
+              />
+            </div>
           )}
         </div>
       </div>
