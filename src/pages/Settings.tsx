@@ -75,6 +75,44 @@ const Settings = () => {
   const handleSaveSettings = async () => {
     if (!user) return;
 
+    // Validações em português brasileiro
+    if (!companyName.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "É necessário informar o nome completo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!insuranceCompany.trim()) {
+      toast({
+        title: "Campo obrigatório", 
+        description: "É necessário informar a corretora de seguros.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!cpfCnpj.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "É necessário informar o CPF ou CNPJ.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validação específica para data de nascimento (apenas para PF)
+    if (cpfCnpj.length === 14 && !birthDate.trim()) { // CPF tem 14 caracteres com máscara
+      toast({
+        title: "Campo obrigatório",
+        description: "Necessário informar data de nascimento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const { error } = await supabase
@@ -99,7 +137,7 @@ const Settings = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao salvar",
-        description: error.message,
+        description: error.message || "Ocorreu um erro ao salvar as configurações.",
         variant: "destructive",
       });
     } finally {
