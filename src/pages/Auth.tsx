@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,13 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, TrendingUp } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [insuranceCompany, setInsuranceCompany] = useState("");
+  const [cpfCnpj, setCpfCnpj] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [insuranceTypes, setInsuranceTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -28,12 +35,33 @@ const Auth = () => {
     checkUser();
   }, [navigate]);
 
+  const handleInsuranceTypeChange = (type: string, checked: boolean) => {
+    setInsuranceTypes(prev => 
+      checked 
+        ? [...prev, type]
+        : prev.filter(t => t !== type)
+    );
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      // Validações
+      if (email !== confirmEmail) {
+        throw new Error("Os emails não coincidem");
+      }
+      
+      if (password !== confirmPassword) {
+        throw new Error("As senhas não coincidem");
+      }
+
+      if (password.length < 6) {
+        throw new Error("A senha deve ter pelo menos 6 caracteres");
+      }
+
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -45,6 +73,23 @@ const Auth = () => {
       });
 
       if (error) throw error;
+
+      // Salvar dados adicionais do perfil
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            insurance_company: insuranceCompany,
+            cpf_cnpj: cpfCnpj,
+            birth_date: birthDate,
+            insurance_types: insuranceTypes
+          })
+          .eq('user_id', data.user.id);
+
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+        }
+      }
 
       toast({
         title: "Cadastro realizado com sucesso!",
@@ -163,49 +208,127 @@ const Auth = () => {
               
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Nome Completo</Label>
-                      <Input
-                        id="fullName"
-                        type="text"
-                        placeholder="Seu nome completo"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                      />
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Nome Completo</Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="insuranceCompany">Corretora de Seguros</Label>
+                    <Input
+                      id="insuranceCompany"
+                      type="text"
+                      placeholder="Nome da sua corretora"
+                      value={insuranceCompany}
+                      onChange={(e) => setInsuranceCompany(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="cpfCnpj">CPF / CNPJ</Label>
+                    <Input
+                      id="cpfCnpj"
+                      type="text"
+                      placeholder="000.000.000-00 ou 00.000.000/0001-00"
+                      value={cpfCnpj}
+                      onChange={(e) => setCpfCnpj(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="birthDate">Data de Nascimento</Label>
+                    <Input
+                      id="birthDate"
+                      type="date"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signupEmail">E-mail</Label>
+                    <Input
+                      id="signupEmail"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmEmail">Confirme seu e-mail</Label>
+                    <Input
+                      id="confirmEmail"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={confirmEmail}
+                      onChange={(e) => setConfirmEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signupPassword">Senha</Label>
+                    <Input
+                      id="signupPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirme sua senha</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Selecione os seguros que você já atua:</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {['AUTO', 'MASSIFICADOS', 'VIDA', 'PRODUTOS PJ'].map((type) => (
+                        <div key={type} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={type}
+                            checked={insuranceTypes.includes(type)}
+                            onCheckedChange={(checked) => handleInsuranceTypeChange(type, checked as boolean)}
+                          />
+                          <Label htmlFor={type} className="text-sm font-normal">{type}</Label>
+                        </div>
+                      ))}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Senha</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={loading}
-                      variant="hero"
-                      size="lg"
-                    >
-                      {loading ? "Cadastrando..." : "Criar Conta"}
-                    </Button>
-                  </form>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={loading}
+                    variant="hero"
+                    size="lg"
+                  >
+                    {loading ? "Cadastrando..." : "Criar Conta"}
+                  </Button>
+                </form>
               </TabsContent>
             </Tabs>
           </CardContent>

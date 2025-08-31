@@ -83,12 +83,16 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          birth_date: string | null
+          cpf_cnpj: string | null
           created_at: string
           email: string | null
           free_studies_limit: number | null
           free_studies_used: number | null
           full_name: string | null
           id: string
+          insurance_company: string | null
+          insurance_types: string[] | null
           is_premium: boolean | null
           phone_number: string | null
           subscription_plan: string | null
@@ -99,12 +103,16 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          birth_date?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
           free_studies_limit?: number | null
           free_studies_used?: number | null
           full_name?: string | null
           id?: string
+          insurance_company?: string | null
+          insurance_types?: string[] | null
           is_premium?: boolean | null
           phone_number?: string | null
           subscription_plan?: string | null
@@ -115,12 +123,16 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          birth_date?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
           free_studies_limit?: number | null
           free_studies_used?: number | null
           full_name?: string | null
           id?: string
+          insurance_company?: string | null
+          insurance_types?: string[] | null
           is_premium?: boolean | null
           phone_number?: string | null
           subscription_plan?: string | null
