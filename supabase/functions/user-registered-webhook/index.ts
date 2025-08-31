@@ -26,10 +26,34 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { userId, userEmail, fullName, phoneNumber } = await req.json();
+    const { userEmail, fullName, phoneNumber } = await req.json();
     
-    if (!userId || !userEmail) {
-      throw new Error("userId and userEmail are required");
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // Authenticate user using the provided JWT
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      logStep('Authentication failed', { authError });
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    const userId = user.id;
+    
+    if (!userEmail) {
+      throw new Error("userEmail is required");
     }
 
     logStep("Processing user registration", { userId, userEmail, fullName });

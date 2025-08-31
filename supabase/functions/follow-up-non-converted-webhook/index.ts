@@ -28,6 +28,42 @@ serve(async (req) => {
 
     const { followUpType, daysAfterLimit } = await req.json();
     
+    // Security check: This function should only be called by admins
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header - admin access required' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // Authenticate user using the provided JWT
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      logStep('Authentication failed', { authError });
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // Check if user has admin role
+    const { data: hasAdminRole } = await supabaseClient.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+
+    if (!hasAdminRole) {
+      logStep('Access denied - admin role required', { userId: user.id });
+      return new Response(JSON.stringify({ error: 'Access denied: admin role required' }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    
     if (!followUpType) {
       throw new Error("followUpType is required (e.g., '3_days', '7_days', '14_days')");
     }

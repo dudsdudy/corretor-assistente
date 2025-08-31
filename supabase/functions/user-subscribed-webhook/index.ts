@@ -26,33 +26,31 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Parse request body - this webhook can be called by Stripe or authenticated users
-    const { userId, subscriptionData } = await req.json();
+    // Parse request body - require authentication for all calls
+    const { subscriptionData } = await req.json();
     
-    // Get authenticated user if this is called from frontend
+    // Get authenticated user - now required for all calls
     const authHeader = req.headers.get('Authorization');
-    let authenticatedUserId = null;
-    
-    if (authHeader) {
-      const { data: { user } } = await supabaseClient.auth.getUser(
-        authHeader.replace('Bearer ', '')
-      );
-      authenticatedUserId = user?.id;
-    }
-
-    // If called from frontend, ensure user can only update their own subscription
-    if (authHeader && authenticatedUserId !== userId) {
-      return new Response(JSON.stringify({ error: 'Access denied: cannot update subscription for other users' }), {
-        status: 403,
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    if (!userId) {
-      throw new Error("userId is required");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      logStep('Authentication failed', { authError });
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    logStep("Processing user subscription", { userId, subscriptionData, authenticatedUserId });
+    const userId = user.id;
 
     // Get user profile data
     const { data: profile, error: profileError } = await supabaseClient
