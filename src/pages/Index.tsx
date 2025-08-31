@@ -60,8 +60,23 @@ const Index = () => {
         // Trigger user registered webhook for new sign-ins
         if (event === 'SIGNED_IN' && session?.user) {
           // Use a slight delay to ensure all user data is properly set
-          setTimeout(() => {
-            freeTrialStatus.triggerUserRegistered();
+          setTimeout(async () => {
+            try {
+              const { error: webhookError } = await supabase.functions.invoke('user-registered-webhook', {
+                body: {
+                  userId: session.user.id,
+                  userEmail: session.user.email,
+                  fullName: session.user.user_metadata?.full_name || "",
+                  phoneNumber: ""
+                }
+              });
+
+              if (webhookError) {
+                console.error('Webhook error:', webhookError);
+              }
+            } catch (error) {
+              console.error('Error invoking webhook:', error);
+            }
           }, 1000);
         }
       }
@@ -75,11 +90,13 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [freeTrialStatus]);
+  }, []); // Remover dependência problemática
 
   useEffect(() => {
     if (!loading && !session) {
-      navigate("/auth");
+      // Clear any stored analysis data when not authenticated
+      localStorage.removeItem('recoveredAnalysis');
+      navigate("/auth", { replace: true });
     }
   }, [session, loading, navigate]);
 

@@ -92,8 +92,25 @@ const AppHeader = ({
   }, []);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+    try {
+      // Clear any local storage data
+      localStorage.removeItem('recoveredAnalysis');
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Sign out error:", error);
+        throw error;
+      }
+      
+      // Force navigation to auth page
+      navigate("/auth", { replace: true });
+    } catch (error) {
+      console.error("Error during sign out:", error);
+      // Force navigation even if there's an error
+      navigate("/auth", { replace: true });
+    }
   };
 
   // Organizar itens por categoria e prioridade

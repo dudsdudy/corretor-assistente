@@ -32,13 +32,18 @@ export const useFreeTrial = (user: User | null) => {
     }
 
     try {
+      setFreeTrialStatus(prev => ({ ...prev, loading: true }));
+      
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('free_studies_used, free_studies_limit, is_premium, subscription_status, subscription_plan')
         .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Profile fetch error:", error);
+        throw error;
+      }
 
       if (profile) {
         const studiesUsed = profile.free_studies_used || 0;
@@ -59,7 +64,15 @@ export const useFreeTrial = (user: User | null) => {
       }
     } catch (error) {
       console.error("Error fetching free trial status:", error);
-      setFreeTrialStatus(prev => ({ ...prev, loading: false }));
+      setFreeTrialStatus(prev => ({ 
+        ...prev, 
+        loading: false,
+        studiesUsed: 0,
+        studiesRemaining: 3,
+        studiesLimit: 3,
+        canCreateStudy: true,
+        isPremium: false
+      }));
     }
   };
 
