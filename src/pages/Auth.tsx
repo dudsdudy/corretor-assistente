@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, TrendingUp } from "lucide-react";
 
@@ -19,6 +21,7 @@ const Auth = () => {
   const [insuranceCompany, setInsuranceCompany] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [personType, setPersonType] = useState<"pf" | "pj" | "">("");
   const [insuranceTypes, setInsuranceTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -209,11 +212,11 @@ const Auth = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Nome Completo</Label>
+                    <Label htmlFor="fullName">Nome do Responsável</Label>
                     <Input
                       id="fullName"
                       type="text"
-                      placeholder="Seu nome completo"
+                      placeholder="Nome do responsável"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
@@ -232,28 +235,68 @@ const Auth = () => {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="cpfCnpj">CPF / CNPJ</Label>
-                    <Input
-                      id="cpfCnpj"
-                      type="text"
-                      placeholder="000.000.000-00 ou 00.000.000/0001-00"
-                      value={cpfCnpj}
-                      onChange={(e) => setCpfCnpj(e.target.value)}
-                      required
-                    />
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Tipo de Pessoa</Label>
+                    <RadioGroup
+                      value={personType}
+                      onValueChange={(value) => {
+                        setPersonType(value as "pf" | "pj");
+                        setCpfCnpj(""); // Limpar campo quando trocar tipo
+                        setBirthDate(""); // Limpar data quando trocar tipo
+                      }}
+                      className="flex gap-6"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="pf" id="pf" />
+                        <Label htmlFor="pf">Pessoa Física (CPF)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="pj" id="pj" />
+                        <Label htmlFor="pj">Pessoa Jurídica (CNPJ)</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="birthDate">Data de Nascimento</Label>
-                    <Input
-                      id="birthDate"
-                      type="date"
-                      value={birthDate}
-                      onChange={(e) => setBirthDate(e.target.value)}
-                      required
-                    />
-                  </div>
+                  {/* Campos condicionais baseados no tipo de pessoa */}
+                  {personType === "pf" && (
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cpfCnpj">CPF</Label>
+                        <Input
+                          id="cpfCnpj"
+                          type="text"
+                          placeholder="000.000.000-00"
+                          value={cpfCnpj}
+                          onChange={(e) => setCpfCnpj(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="birthDate">Data de Nascimento</Label>
+                        <Input
+                          id="birthDate"
+                          type="date"
+                          value={birthDate}
+                          onChange={(e) => setBirthDate(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {personType === "pj" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="cpfCnpj">CNPJ</Label>
+                      <Input
+                        id="cpfCnpj"
+                        type="text"
+                        placeholder="00.000.000/0001-00"
+                        value={cpfCnpj}
+                        onChange={(e) => setCpfCnpj(e.target.value)}
+                        required
+                      />
+                    </div>
+                  )}
                   
                   <div className="space-y-2">
                     <Label htmlFor="signupEmail">E-mail</Label>
@@ -322,7 +365,7 @@ const Auth = () => {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={loading}
+                    disabled={loading || !personType}
                     variant="hero"
                     size="lg"
                   >
