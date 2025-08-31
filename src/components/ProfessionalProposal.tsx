@@ -243,7 +243,7 @@ export default function ProfessionalProposal({
         <section>
           <h3 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-3">
             <div className="w-2 h-8 bg-gradient-to-b from-purple-600 to-purple-800 rounded-full"></div>
-            Coberturas Recomendadas
+            Resumo de Coberturas
           </h3>
           <div className="grid gap-6">
             {coveragesWithPremiums.map((coverage, index) => (
@@ -313,16 +313,33 @@ export default function ProfessionalProposal({
             <CardContent className="p-8">
               <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-4">
-                  <h4 className="text-xl font-bold text-gray-800">Investimento Total</h4>
+                  <h4 className="text-xl font-bold text-gray-800">Cobertura Total</h4>
                   <p className="text-4xl font-bold text-orange-600">{formatCurrency(totalCoverage)}</p>
                   <p className="text-gray-600">Valor total das coberturas recomendadas</p>
                 </div>
                 <div className="space-y-4">
-                  <h4 className="text-xl font-bold text-gray-800">Prêmio Mensal</h4>
+                  <h4 className="text-xl font-bold text-gray-800">Prêmio Mensal Total</h4>
                   <p className="text-4xl font-bold text-red-600">{formatCurrency(totalMonthlyPremium)}</p>
-                  <p className="text-gray-600">Total dos prêmios mensais estimados</p>
+                  <p className="text-gray-600">Soma de todos os prêmios mensais</p>
                 </div>
               </div>
+              
+              {totalMonthlyPremium > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="flex justify-between items-center text-sm text-gray-600">
+                    <span>Custo anual estimado:</span>
+                    <span className="font-semibold text-lg text-gray-800">
+                      {formatCurrency(totalMonthlyPremium * 12)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm text-gray-600 mt-2">
+                    <span>Proteção familiar:</span>
+                    <span className="font-semibold">
+                      {(totalCoverage / totalMonthlyPremium).toFixed(0)}x o valor do prêmio mensal
+                    </span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </section>

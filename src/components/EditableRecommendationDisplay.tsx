@@ -122,6 +122,37 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
     ));
   };
 
+  const toggleTitleEdit = () => {
+    setIsEditingSummaryTitle(!isEditingSummaryTitle);
+  };
+
+  const saveTitleEdit = () => {
+    setIsEditingSummaryTitle(false);
+  };
+
+  const toggleContentEdit = () => {
+    setIsEditingSummaryContent(!isEditingSummaryContent);
+  };
+
+  const saveContentEdit = () => {
+    setIsEditingSummaryContent(false);
+  };
+
+  const toggleCoverageEdit = (index: number, field: 'title' | 'content') => {
+    setCoverages(prev => prev.map((coverage, i) => 
+      i === index ? { 
+        ...coverage, 
+        [`isEditing${field === 'title' ? 'Title' : 'Content'}`]: !coverage[`isEditing${field === 'title' ? 'Title' : 'Content'}`]
+      } : coverage
+    ));
+  };
+
+  const updateCoverageField = (index: number, field: 'type' | 'justification', value: string) => {
+    setCoverages(prev => prev.map((coverage, i) => 
+      i === index ? { ...coverage, [field]: value } : coverage
+    ));
+  };
+
   const updateCoverageInsurer = (index: number, insurer: string) => {
     setCoverages(prev => prev.map((coverage, i) => 
       i === index ? { ...coverage, insurer: insurer } : coverage
@@ -245,74 +276,217 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
         <div className="space-y-6">
           {/* Internal Coverage View */}
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary" />
-              Coberturas Recomendadas (Visão do Corretor)
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <FileText className="h-6 w-6 text-primary" />
+                {isEditingSummaryTitle ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={summaryTitle}
+                      onChange={(e) => setSummaryTitle(e.target.value)}
+                      className="text-xl font-semibold"
+                    />
+                    <Button size="sm" onClick={saveTitleEdit}>
+                      <Save className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={toggleTitleEdit}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span>{summaryTitle}</span>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={toggleTitleEdit}
+                      className="print:hidden"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </h3>
+            </div>
+
+            {/* Summary Content with Edit Functionality */}
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Resumo Executivo</CardTitle>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={toggleContentEdit}
+                    className="print:hidden"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isEditingSummaryContent ? (
+                  <div className="space-y-4">
+                    <Textarea
+                      value={summaryContent}
+                      onChange={(e) => setSummaryContent(e.target.value)}
+                      rows={8}
+                      className="min-h-[200px]"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={saveContentEdit}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Salvar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={toggleContentEdit}>
+                        <X className="h-4 w-4 mr-2" />
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {summaryContent}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <h4 className="text-lg font-medium text-gray-800 mb-4">Coberturas Individuais (Visão do Corretor)</h4>
             
             {coverages.map((coverage, index) => (
               <Card key={index} className="shadow-soft">
                 <CardContent className="p-4">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                          {getCoverageIcon(coverage.type)}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                            {getCoverageIcon(coverage.type)}
+                          </div>
+                          <div className="flex-1">
+                            {coverage.isEditingTitle ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={coverage.type}
+                                  onChange={(e) => updateCoverageField(index, 'type', e.target.value)}
+                                  className="font-semibold text-lg"
+                                />
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => toggleCoverageEdit(index, 'title')}
+                                >
+                                  <Save className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-lg">{coverage.type}</h4>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => toggleCoverageEdit(index, 'title')}
+                                  className="print:hidden"
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                            <Badge className={`${getPriorityColor(coverage.priority)} text-xs mt-1`}>
+                              {getPriorityLabel(coverage.priority)}
+                            </Badge>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-lg">{coverage.type}</h4>
-                          <Badge className={`${getPriorityColor(coverage.priority)} text-xs`}>
-                            {getPriorityLabel(coverage.priority)}
-                          </Badge>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-primary">
+                            {formatCurrency(coverage.amount)}
+                          </p>
+                          {coverage.monthlyPremium && coverage.monthlyPremium > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                              Prêmio: {formatCurrency(coverage.monthlyPremium)}/mês
+                            </p>
+                          )}
+                          {coverage.insurer && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {coverage.insurer}
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">
-                          {formatCurrency(coverage.amount)}
-                        </p>
-                        {coverage.monthlyPremium && coverage.monthlyPremium > 0 && (
-                          <p className="text-sm text-muted-foreground">
-                            Prêmio: {formatCurrency(coverage.monthlyPremium)}/mês
-                          </p>
+
+                      <div className="print:hidden grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Prêmio Mensal (R$)</Label>
+                          <Input
+                            type="number"
+                            value={coverage.monthlyPremium || ''}
+                            onChange={(e) => updateCoveragePremium(index, parseFloat(e.target.value) || 0)}
+                            placeholder="0,00"
+                          />
+                        </div>
+                        <div>
+                          <Label>Seguradora</Label>
+                          <Select
+                            value={coverage.insurer || ''}
+                            onValueChange={(value) => updateCoverageInsurer(index, value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a seguradora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {BRAZILIAN_INSURERS.map((insurer) => (
+                                <SelectItem key={insurer} value={insurer}>
+                                  {insurer}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-medium text-sm">Justificativa:</h5>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => toggleCoverageEdit(index, 'content')}
+                            className="print:hidden"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {coverage.isEditingContent ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={coverage.justification}
+                              onChange={(e) => updateCoverageField(index, 'justification', e.target.value)}
+                              rows={4}
+                            />
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => toggleCoverageEdit(index, 'content')}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Salvar
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => toggleCoverageEdit(index, 'content')}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancelar
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">{coverage.justification}</p>
                         )}
                       </div>
                     </div>
-
-                    <div className="print:hidden grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Prêmio Mensal (R$)</Label>
-                        <Input
-                          type="number"
-                          value={coverage.monthlyPremium || ''}
-                          onChange={(e) => updateCoveragePremium(index, parseFloat(e.target.value) || 0)}
-                          placeholder="0,00"
-                        />
-                      </div>
-                      <div>
-                        <Label>Seguradora</Label>
-                        <Select
-                          value={coverage.insurer || ''}
-                          onValueChange={(value) => updateCoverageInsurer(index, value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a seguradora" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {BRAZILIAN_INSURERS.map((insurer) => (
-                              <SelectItem key={insurer} value={insurer}>
-                                {insurer}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h5 className="font-medium text-sm mb-2">Justificativa:</h5>
-                      <p className="text-sm text-muted-foreground">{coverage.justification}</p>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             ))}
