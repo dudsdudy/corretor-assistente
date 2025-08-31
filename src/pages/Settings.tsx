@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowLeft, 
@@ -14,7 +15,8 @@ import {
   User,
   Mail,
   Clock,
-  CreditCard
+  CreditCard,
+  Shield
 } from "lucide-react";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,8 +30,20 @@ const Settings = () => {
   const [companyType, setCompanyType] = useState("");
   const [reminderDays, setReminderDays] = useState("3");
   const [logoUrl, setLogoUrl] = useState("");
+  const [insuranceCompany, setInsuranceCompany] = useState("");
+  const [cpfCnpj, setCpfCnpj] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [insuranceTypes, setInsuranceTypes] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleInsuranceTypeChange = (type: string, checked: boolean) => {
+    setInsuranceTypes(prev => 
+      checked 
+        ? [...prev, type]
+        : prev.filter(t => t !== type)
+    );
+  };
 
   useEffect(() => {
     const getUser = async () => {
@@ -42,11 +56,15 @@ const Settings = () => {
           .from('profiles')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
         if (profile) {
           setCompanyName(profile.full_name || "");
           setLogoUrl(profile.avatar_url || "");
+          setInsuranceCompany(profile.insurance_company || "");
+          setCpfCnpj(profile.cpf_cnpj || "");
+          setBirthDate(profile.birth_date || "");
+          setInsuranceTypes(profile.insurance_types || []);
         }
       }
       setLoading(false);
@@ -64,6 +82,10 @@ const Settings = () => {
         .update({
           full_name: companyName,
           avatar_url: logoUrl,
+          insurance_company: insuranceCompany,
+          cpf_cnpj: cpfCnpj,
+          birth_date: birthDate,
+          insurance_types: insuranceTypes,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id);
@@ -152,7 +174,7 @@ const Settings = () => {
                 Informações do Perfil
               </CardTitle>
               <CardDescription>
-                Configure suas informações pessoais e da empresa
+                Configure suas informações pessoais e profissionais
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -164,6 +186,48 @@ const Settings = () => {
                     value={user?.email || ""}
                     disabled
                     className="bg-muted"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Nome Completo</Label>
+                  <Input
+                    id="companyName"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Seu nome completo"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="insuranceCompany">Corretora de Seguros</Label>
+                  <Input
+                    id="insuranceCompany"
+                    value={insuranceCompany}
+                    onChange={(e) => setInsuranceCompany(e.target.value)}
+                    placeholder="Nome da sua corretora"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cpfCnpj">CPF / CNPJ</Label>
+                  <Input
+                    id="cpfCnpj"
+                    value={cpfCnpj}
+                    onChange={(e) => setCpfCnpj(e.target.value)}
+                    placeholder="000.000.000-00 ou 00.000.000/0001-00"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="birthDate">Data de Nascimento</Label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -179,15 +243,32 @@ const Settings = () => {
                   </Select>
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Nome da Corretora/Corretor</Label>
-                <Input
-                  id="companyName"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Ex: Corretora XYZ Ltda ou João da Silva Seguros"
-                />
+            </CardContent>
+          </Card>
+
+          {/* Insurance Types */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Seguros que Você Atua
+              </CardTitle>
+              <CardDescription>
+                Selecione os tipos de seguros que você comercializa
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {['AUTO', 'MASSIFICADOS', 'VIDA', 'PRODUTOS PJ'].map((type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={type}
+                      checked={insuranceTypes.includes(type)}
+                      onCheckedChange={(checked) => handleInsuranceTypeChange(type, checked as boolean)}
+                    />
+                    <Label htmlFor={type} className="text-sm font-normal">{type}</Label>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
