@@ -42,6 +42,7 @@ export interface DependentInfo {
   age: number;
   yearsUntilEducationComplete: number;
   educationType: 'superior' | 'medio' | 'tecnico';
+  name?: string;
 }
 
 interface ClientDataFormProps {
@@ -63,6 +64,8 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
     healthStatus: "",
     existingInsurance: false,
   });
+
+  const [showDependentNames, setShowDependentNames] = useState<boolean[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +90,8 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
       ...prev,
       dependentsData: [...(prev.dependentsData || []), newDependent]
     }));
+    
+    setShowDependentNames(prev => [...prev, false]);
   };
 
   const removeDependent = (index: number) => {
@@ -94,6 +99,8 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
       ...prev,
       dependentsData: prev.dependentsData?.filter((_, i) => i !== index) || []
     }));
+    
+    setShowDependentNames(prev => prev.filter((_, i) => i !== index));
   };
 
   const updateDependent = (index: number, field: keyof DependentInfo, value: any) => {
@@ -103,6 +110,12 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
         i === index ? { ...dep, [field]: value } : dep
       ) || []
     }));
+  };
+
+  const toggleDependentNameField = (index: number) => {
+    setShowDependentNames(prev => 
+      prev.map((show, i) => i === index ? !show : show)
+    );
   };
 
   return (
@@ -243,7 +256,7 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                     </Button>
                   </div>
                   
-                  {formData.dependentsData?.map((dependent, index) => (
+                   {formData.dependentsData?.map((dependent, index) => (
                     <Card key={index} className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-medium">Dependente {index + 1}</h4>
@@ -257,6 +270,18 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                      
+                      {showDependentNames[index] && (
+                        <div className="mb-4">
+                          <Label>Nome do Dependente</Label>
+                          <Input
+                            type="text"
+                            value={dependent.name || ""}
+                            onChange={(e) => updateDependent(index, 'name', e.target.value)}
+                            placeholder="Nome do dependente"
+                          />
+                        </div>
+                      )}
                       
                       <div className="grid md:grid-cols-3 gap-4">
                         <div className="space-y-2">
@@ -299,6 +324,19 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+                      
+                      <div className="mt-3 flex justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleDependentNameField(index)}
+                          className="flex items-center gap-2"
+                        >
+                          <Users className="h-3 w-3" />
+                          {showDependentNames[index] ? "Ocultar Nome" : "Incluir Nome"}
+                        </Button>
                       </div>
                     </Card>
                   )) || []}
