@@ -415,4 +415,29 @@ body.printing * {
   .text-xl {
     font-size: 1.125rem !important;
   }
+  
+  /* Fix select dropdowns on mobile */
+  [data-radix-select-content] {
+    z-index: 9999 !important;
+    background: hsl(var(--popover)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  /* Dark mode select fixes */
+  .dark [data-radix-select-content] {
+    background: hsl(var(--popover)) !important;
+    color: hsl(var(--popover-foreground)) !important;
+  }
+  
+  /* Prevent mobile layout breaks */
+  .mobile-form-card .grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Better mobile card layout */
+  .mobile-form-card {
+    max-width: 100% !important;
+    margin: 0.5rem !important;
+  }
 }

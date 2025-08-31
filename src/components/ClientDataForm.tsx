@@ -119,20 +119,20 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-medium bg-gradient-card">
-      <CardHeader className="text-center px-4 sm:px-6">
-        <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
-          <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+    <Card className="w-full max-w-2xl mx-auto shadow-medium bg-gradient-card mobile-form-card">
+      <CardHeader className="text-center px-3 sm:px-6">
+        <CardTitle className="flex items-center justify-center gap-2 text-base sm:text-xl">
+          <FileText className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
           Dados do Cliente
         </CardTitle>
-        <CardDescription className="text-sm sm:text-base">
+        <CardDescription className="text-xs sm:text-base">
           Preencha as informações para gerar uma recomendação personalizada
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-4 sm:px-6">
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+      <CardContent className="px-3 sm:px-6">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
           {/* Basic Information */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium">Nome Completo</Label>
               <Input
@@ -160,13 +160,13 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-2 sm:space-y-3">
               <Label className="text-sm font-medium">Sexo</Label>
               <RadioGroup
                 value={formData.gender}
                 onValueChange={(value) => handleInputChange("gender", value)}
-                className="flex flex-row gap-6 sm:flex-col sm:gap-3"
+                className="flex flex-row gap-4 sm:flex-col sm:gap-3"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="masculino" id="male" className="h-4 w-4" />
@@ -182,18 +182,17 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
               <ProfessionAutocomplete
                 value={formData.profession}
                 onChange={(value) => handleInputChange("profession", value)}
-                required
               />
             </div>
           </div>
 
           {/* Financial Information */}
-          <div className="border-t pt-4 sm:pt-6">
-            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+          <div className="border-t pt-3 sm:pt-6">
+            <h3 className="text-sm sm:text-lg font-semibold mb-2 sm:mb-4 flex items-center gap-2">
               <Calculator className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
               Informações Financeiras
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <Label htmlFor="monthlyIncome" className="text-sm font-medium">Renda Mensal (R$)</Label>
                 <Input
@@ -204,7 +203,6 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                   value={formData.monthlyIncome || ""}
                   onChange={(e) => handleInputChange("monthlyIncome", parseFloat(e.target.value) || 0)}
                   placeholder="5000.00"
-                  required
                   className="h-10 text-sm"
                 />
               </div>
@@ -225,9 +223,9 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
           </div>
 
           {/* Family Information */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+          <div className="border-t pt-3 sm:pt-6">
+            <h3 className="text-sm sm:text-lg font-semibold mb-2 sm:mb-4 flex items-center gap-2">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Informações da Família
             </h3>
             

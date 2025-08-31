@@ -162,10 +162,10 @@ const Index = () => {
     }
 
     // Basic validation - only check essential fields
-    if (!clientData.name || !clientData.age || clientData.age < 18 || !clientData.profession) {
+    if (!clientData.name || !clientData.age || clientData.age < 18) {
       toast({
         title: "Dados incompletos",
-        description: "Preencha nome, idade (≥18) e profissão para gerar o estudo.",
+        description: "Preencha nome e idade (≥18) para gerar o estudo.",
         variant: "destructive",
       });
       return;
@@ -179,6 +179,11 @@ const Index = () => {
         title: "Renda estimada",
         description: `Renda mensal estimada em R$ ${defaultIncome.toLocaleString('pt-BR')} para calcular o estudo.`,
       });
+    }
+
+    // Se profissão não informada, usar valor padrão
+    if (!clientData.profession || clientData.profession.trim() === "") {
+      clientData.profession = "Não informado";
     }
 
     setProcessingAnalysis(true);
