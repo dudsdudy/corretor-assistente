@@ -12,7 +12,8 @@ import {
   ArrowRight,
   Calendar,
   DollarSign,
-  Download
+  Trash2,
+  Shield
 } from "lucide-react";
 import { User } from '@supabase/supabase-js';
 import AppHeader from "@/components/AppHeader";
@@ -168,6 +169,49 @@ const Sales = () => {
     return total;
   };
 
+  const computeTotalBasicCoverage = (analysis: ClientAnalysis): number => {
+    const rc: any = analysis.recommended_coverage;
+    let total = 0;
+    if (!rc) return 0;
+    if (Array.isArray(rc)) {
+      for (const c of rc) {
+        const amount = (c as any).amount ?? 0;
+        total += Number(amount) || 0;
+      }
+    } else if (typeof rc === 'object') {
+      for (const key of Object.keys(rc)) {
+        const item: any = rc[key];
+        const amount = item?.amount ?? 0;
+        total += Number(amount) || 0;
+      }
+    }
+    return total;
+  };
+
+  const deleteLead = async (analysisId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_analyses')
+        .delete()
+        .eq('id', analysisId);
+
+      if (error) throw error;
+
+      setAnalyses(prev => prev.filter(analysis => analysis.id !== analysisId));
+
+      toast({
+        title: "Lead excluído",
+        description: "Lead foi removido com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir lead",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const kanbanColumns = [
     { id: 'novo', title: 'Novos Leads', color: 'bg-blue-50 border-blue-200' },
     { id: 'contato', title: 'Primeiro Contato', color: 'bg-yellow-50 border-yellow-200' },
@@ -248,20 +292,19 @@ const Sales = () => {
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-sm font-medium">{analysis.client_name}</CardTitle>
                           <div className="flex gap-1">
-                            {/* Download Button */}
+                            {/* Delete Button */}
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                toast({
-                                  title: "Download do Estudo",
-                                  description: "Funcionalidade em desenvolvimento",
-                                });
+                                if (window.confirm(`Tem certeza que deseja excluir o lead de ${analysis.client_name}?`)) {
+                                  deleteLead(analysis.id);
+                                }
                               }}
-                              className="h-6 w-6 p-0"
-                              title="Baixar estudo"
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                              title="Excluir lead"
                             >
-                              <Download className="h-3 w-3" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                             
                             {/* Next Status Button */}
@@ -291,21 +334,26 @@ const Sales = () => {
                       </CardHeader>
                       <CardContent className="pt-0">
                         <div className="space-y-2 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-3 w-3" />
-                            <span className="text-xs font-medium">{formatCurrencyBRL(computeTotalMonthlyPremium(analysis))}</span>
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="h-3 w-3" />
+                              <span className="text-xs font-medium">Prêmio:</span>
+                            </div>
+                            <span className="text-xs font-bold text-green-600">
+                              {formatCurrencyBRL(computeTotalMonthlyPremium(analysis))}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="flex items-center gap-1">
+                              <Shield className="h-3 w-3" />
+                              <span className="text-xs font-medium">Cobertura Básica:</span>
+                            </div>
+                            <span className="text-xs font-bold text-blue-600">
+                              {formatCurrencyBRL(computeTotalBasicCoverage(analysis))}
+                            </span>
                           </div>
                           {analysis.client_age && (
                             <p>{analysis.client_age} anos • {analysis.client_profession}</p>
-                          )}
-                          {analysis.monthly_income && (
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="h-3 w-3" />
-                              {new Intl.NumberFormat('pt-BR', { 
-                                style: 'currency', 
-                                currency: 'BRL' 
-                              }).format(analysis.monthly_income)}
-                            </div>
                           )}
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
