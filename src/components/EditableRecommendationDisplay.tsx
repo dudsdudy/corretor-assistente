@@ -14,7 +14,7 @@ import ProfessionalProposal from "./ProfessionalProposal";
 interface EditableRecommendationDisplayProps {
   analysis: ClientAnalysis;
   onGeneratePDF?: () => void;
-  onSaveAnalysis?: () => void;
+  onSaveAnalysis?: (extendedData?: any) => void;
 }
 
 interface EditableCoverage extends CoverageRecommendation {
@@ -22,6 +22,8 @@ interface EditableCoverage extends CoverageRecommendation {
   insurer?: string;
   isEditingTitle?: boolean;
   isEditingContent?: boolean;
+  isEditingPriority?: boolean;
+  isCustom?: boolean;
 }
 
 const BRAZILIAN_INSURERS = [
@@ -79,6 +81,10 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
   const [quotationValidity, setQuotationValidity] = useState("30 dias");
   const [showProfessionalProposal, setShowProfessionalProposal] = useState(false);
   const [hoursSaved, setHoursSaved] = useState(0);
+  const [clientSalary, setClientSalary] = useState(0);
+  const [newCoverageType, setNewCoverageType] = useState("");
+  const [newCoverageAmount, setNewCoverageAmount] = useState(0);
+  const [newCoverageJustification, setNewCoverageJustification] = useState("");
 
   useEffect(() => {
     const fetchBrokerInfo = async () => {
@@ -110,10 +116,13 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
       monthlyPremium: 0,
       insurer: "",
       isEditingTitle: false,
-      isEditingContent: false
+      isEditingContent: false,
+      isEditingPriority: false,
+      isCustom: false
     })));
     setSummaryContent(analysis.summary);
     setHoursSaved(3.5);
+    setClientSalary(0);
   }, [analysis]);
 
   const updateCoveragePremium = (index: number, premium: number) => {
@@ -159,8 +168,61 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
     ));
   };
 
+  const updateCoveragePriority = (index: number, priority: "high" | "medium" | "low") => {
+    setCoverages(prev => prev.map((coverage, i) => 
+      i === index ? { ...coverage, priority: priority } : coverage
+    ));
+  };
+
+  const togglePriorityEdit = (index: number) => {
+    setCoverages(prev => prev.map((coverage, i) => 
+      i === index ? { ...coverage, isEditingPriority: !coverage.isEditingPriority } : coverage
+    ));
+  };
+
+  const addCustomCoverage = () => {
+    if (!newCoverageType || !newCoverageAmount) return;
+    
+    const customCoverage: EditableCoverage = {
+      type: newCoverageType,
+      amount: newCoverageAmount,
+      justification: newCoverageJustification,
+      priority: "medium" as const,
+      calculationBasis: "Personalizada",
+      riskFactors: [],
+      monthlyPremium: 0,
+      insurer: "",
+      isEditingTitle: false,
+      isEditingContent: false,
+      isEditingPriority: false,
+      isCustom: true
+    };
+
+    setCoverages(prev => [...prev, customCoverage]);
+    setNewCoverageType("");
+    setNewCoverageAmount(0);
+    setNewCoverageJustification("");
+  };
+
+  const removeCoverage = (index: number) => {
+    setCoverages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const totalCoverage = coverages.reduce((sum, coverage) => sum + coverage.amount, 0);
   const totalMonthlyPremium = coverages.reduce((sum, coverage) => sum + (coverage.monthlyPremium || 0), 0);
+
+  const handleSaveWithExtendedData = () => {
+    if (onSaveAnalysis) {
+      const extendedData = {
+        coverages: coverages,
+        clientSalary: clientSalary,
+        totalMonthlyPremium: totalMonthlyPremium,
+        partnerBroker: partnerBroker,
+        quotationValidity: quotationValidity
+      };
+      onSaveAnalysis(extendedData);
+    }
+  };
 
   return (
     <div id="proposal-content" className="w-full max-w-6xl mx-auto space-y-6 print:space-y-4">
@@ -218,6 +280,17 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
             </div>
           </div>
           
+          <div className="mt-4">
+            <Label htmlFor="clientSalary">Salário do Cliente (R$)</Label>
+            <Input
+              id="clientSalary"
+              type="number"
+              value={clientSalary}
+              onChange={(e) => setClientSalary(parseFloat(e.target.value) || 0)}
+              placeholder="Salário mensal"
+            />
+          </div>
+          
           <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border">
             <div className="flex items-center gap-3">
               <div className="bg-green-100 rounded-full p-2">
@@ -230,6 +303,58 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
                 </p>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Add Custom Coverage Card */}
+      <Card className="print:hidden">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Adicionar Cobertura Personalizada
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="newCoverageType">Tipo de Cobertura</Label>
+              <Input
+                id="newCoverageType"
+                value={newCoverageType}
+                onChange={(e) => setNewCoverageType(e.target.value)}
+                placeholder="Ex: Cobertura Adicional"
+              />
+            </div>
+            <div>
+              <Label htmlFor="newCoverageAmount">Valor da Cobertura (R$)</Label>
+              <Input
+                id="newCoverageAmount"
+                type="number"
+                value={newCoverageAmount}
+                onChange={(e) => setNewCoverageAmount(parseFloat(e.target.value) || 0)}
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <Label htmlFor="newCoverageJustification">Justificativa</Label>
+            <Textarea
+              id="newCoverageJustification"
+              value={newCoverageJustification}
+              onChange={(e) => setNewCoverageJustification(e.target.value)}
+              placeholder="Por que esta cobertura é importante..."
+              rows={3}
+            />
+          </div>
+          <div className="mt-4">
+            <Button 
+              onClick={addCustomCoverage}
+              disabled={!newCoverageType || !newCoverageAmount}
+              className="w-full"
+            >
+              Adicionar Cobertura
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -247,13 +372,13 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
         
         {onGeneratePDF && (
           <Button onClick={onGeneratePDF} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             Gerar PDF
           </Button>
         )}
         
         {onSaveAnalysis && (
-          <Button onClick={onSaveAnalysis} variant="outline" className="flex items-center gap-2">
+          <Button onClick={handleSaveWithExtendedData} variant="outline" className="flex items-center gap-2">
             <Save className="h-4 w-4" />
             Salvar Estudo
           </Button>
@@ -393,25 +518,74 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
                                 </Button>
                               </div>
                             )}
-                            <Badge className={`${getPriorityColor(coverage.priority)} text-xs mt-1`}>
-                              {getPriorityLabel(coverage.priority)}
-                            </Badge>
+                            {coverage.isEditingPriority ? (
+                              <div className="flex items-center gap-2 mt-1">
+                                 <Select
+                                   value={coverage.priority}
+                                   onValueChange={(value: "high" | "medium" | "low") => updateCoveragePriority(index, value)}
+                                 >
+                                  <SelectTrigger className="w-24 h-6 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="high">Alta</SelectItem>
+                                    <SelectItem value="medium">Média</SelectItem>
+                                    <SelectItem value="low">Baixa</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => togglePriorityEdit(index)}
+                                  className="h-6 px-2"
+                                >
+                                  <Save className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className={`${getPriorityColor(coverage.priority)} text-xs`}>
+                                  {getPriorityLabel(coverage.priority)}
+                                </Badge>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => togglePriorityEdit(index)}
+                                  className="print:hidden h-6 px-1"
+                                >
+                                  <Edit3 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-primary">
-                            {formatCurrency(coverage.amount)}
-                          </p>
-                          {coverage.monthlyPremium && coverage.monthlyPremium > 0 && (
-                            <p className="text-sm text-muted-foreground">
-                              Prêmio: {formatCurrency(coverage.monthlyPremium)}/mês
-                            </p>
-                          )}
-                          {coverage.insurer && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {coverage.insurer}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-2 justify-end">
+                            <div>
+                              <p className="text-2xl font-bold text-primary">
+                                {formatCurrency(coverage.amount)}
+                              </p>
+                              {coverage.monthlyPremium && coverage.monthlyPremium > 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                  Prêmio: {formatCurrency(coverage.monthlyPremium)}/mês
+                                </p>
+                              )}
+                              {coverage.insurer && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {coverage.insurer}
+                                </p>
+                              )}
+                            </div>
+                            {coverage.isCustom && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => removeCoverage(index)}
+                                className="text-destructive hover:text-destructive print:hidden"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
 

@@ -237,19 +237,20 @@ const Index = () => {
     handleFormSubmit(clientData);
   };
 
-  const handleSaveAnalysis = async () => {
+  const handleSaveAnalysis = async (extendedData?: any) => {
     if (!analysis || !user || !originalClientData) return;
     
     try {
-      // Use the actual client data that was used to generate the analysis
-
+      // Prepare the data to save, including extended data if provided
+      const recommendedCoverageData = extendedData?.coverages || analysis.recommendedCoverages;
+      
       const { error } = await supabase
         .from('client_analyses')
         .insert({
           broker_id: user.id,
           client_name: analysis.clientName,
           client_age: originalClientData.age,
-          monthly_income: originalClientData.monthlyIncome,
+          monthly_income: extendedData?.clientSalary || originalClientData.monthlyIncome,
           risk_profile: analysis.riskProfile,
           client_gender: originalClientData.gender,
           client_profession: originalClientData.profession,
@@ -259,8 +260,13 @@ const Index = () => {
           dependents_data: originalClientData.dependentsData ? JSON.parse(JSON.stringify(originalClientData.dependentsData)) : null,
           current_debts: originalClientData.currentDebts,
           existing_insurance: originalClientData.existingInsurance,
-          recommended_coverage: analysis.recommendedCoverages as any,
-          justifications: { summary: analysis.summary } as any,
+          recommended_coverage: recommendedCoverageData as any,
+          justifications: { 
+            summary: analysis.summary,
+            partnerBroker: extendedData?.partnerBroker,
+            quotationValidity: extendedData?.quotationValidity,
+            totalMonthlyPremium: extendedData?.totalMonthlyPremium
+          } as any,
           status: 'novo'
         });
       

@@ -14,7 +14,7 @@ import {
   Eye,
   Trash2,
   Filter,
-  Download
+  TrendingUp
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -177,21 +177,11 @@ const Leads = () => {
     return total;
   };
 
-  // Exporta relatório Excel com resumo por prêmio
-  const exportToExcel = () => {
-    const rows = (statusFilter === "todos" ? analyses : filteredAnalyses).map(a => {
-      const totalPremium = computeTotalMonthlyPremium(a);
-      return {
-        Cliente: a.client_name,
-        Status: getStatusLabel(a.status),
-        Data: new Date(a.created_at).toLocaleDateString('pt-BR'),
-        PremioTotalMensal: Number(totalPremium.toFixed(2))
-      };
-    });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Leads");
-    XLSX.writeFile(wb, `leads_premios_${new Date().toISOString().slice(0,10)}.xlsx`);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
 
   const filteredAnalyses = statusFilter === "todos" 
@@ -230,10 +220,6 @@ const Leads = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Exportar Excel (Prêmios)
-          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -390,6 +376,64 @@ const Leads = () => {
                 </TableBody>
               </Table>
             )}
+          </CardContent>
+        </Card>
+        
+        {/* Monthly/Yearly Summary */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Resumo de Faturamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-8">
+              <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                <h4 className="text-lg font-semibold text-blue-800 mb-2">Este Mês</h4>
+                <p className="text-3xl font-bold text-blue-600">
+                  {formatCurrency(
+                    analyses
+                      .filter(a => {
+                        const analysisDate = new Date(a.created_at);
+                        const currentDate = new Date();
+                        return analysisDate.getMonth() === currentDate.getMonth() && 
+                               analysisDate.getFullYear() === currentDate.getFullYear();
+                      })
+                      .reduce((sum, a) => sum + computeTotalMonthlyPremium(a), 0)
+                  )}
+                </p>
+                <p className="text-sm text-blue-600 mt-1">
+                  {analyses.filter(a => {
+                    const analysisDate = new Date(a.created_at);
+                    const currentDate = new Date();
+                    return analysisDate.getMonth() === currentDate.getMonth() && 
+                           analysisDate.getFullYear() === currentDate.getFullYear();
+                  }).length} análises
+                </p>
+              </div>
+              <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                <h4 className="text-lg font-semibold text-green-800 mb-2">Este Ano</h4>
+                <p className="text-3xl font-bold text-green-600">
+                  {formatCurrency(
+                    analyses
+                      .filter(a => {
+                        const analysisDate = new Date(a.created_at);
+                        const currentDate = new Date();
+                        return analysisDate.getFullYear() === currentDate.getFullYear();
+                      })
+                      .reduce((sum, a) => sum + computeTotalMonthlyPremium(a), 0)
+                  )}
+                </p>
+                <p className="text-sm text-green-600 mt-1">
+                  {analyses.filter(a => {
+                    const analysisDate = new Date(a.created_at);
+                    const currentDate = new Date();
+                    return analysisDate.getFullYear() === currentDate.getFullYear();
+                  }).length} análises
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
