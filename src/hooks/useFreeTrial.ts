@@ -89,13 +89,13 @@ export const useFreeTrial = (user: User | null) => {
 
         setFreeTrialStatus(updatedStatus);
 
-        // Trigger webhook events for N8N
+        // Trigger specific webhook events for N8N based on the situation
         if (result.limit_reached && !freeTrialStatus.isPremium) {
-          // Free trial limit reached
-          await triggerWebhookEvent('free_trial_limit_reached');
+          // Free trial limit reached - trigger conversion campaign
+          await triggerFreeTrialLimitReached();
         } else {
-          // Study completed
-          await triggerWebhookEvent('study_completed');
+          // Study completed - trigger follow-up based on remaining studies
+          await triggerStudyCompleted(result.studies_remaining);
         }
 
         return !result.limit_reached;
@@ -124,6 +124,69 @@ export const useFreeTrial = (user: User | null) => {
       });
     } catch (error) {
       console.error("Error triggering webhook:", error);
+    }
+  };
+
+  const triggerUserRegistered = async (registrationData?: any) => {
+    if (!user) return;
+
+    try {
+      await supabase.functions.invoke('user-registered-webhook', {
+        body: {
+          userId: user.id,
+          userEmail: user.email,
+          fullName: registrationData?.fullName,
+          phoneNumber: registrationData?.phoneNumber
+        }
+      });
+    } catch (error) {
+      console.error("Error triggering user registration webhook:", error);
+    }
+  };
+
+  const triggerStudyCompleted = async (studiesRemaining: number, studyData?: any) => {
+    if (!user) return;
+
+    try {
+      await supabase.functions.invoke('study-completed-webhook', {
+        body: {
+          userId: user.id,
+          studyData,
+          studiesRemaining
+        }
+      });
+    } catch (error) {
+      console.error("Error triggering study completed webhook:", error);
+    }
+  };
+
+  const triggerFreeTrialLimitReached = async (finalStudyData?: any) => {
+    if (!user) return;
+
+    try {
+      await supabase.functions.invoke('free-trial-limit-reached-webhook', {
+        body: {
+          userId: user.id,
+          finalStudyData
+        }
+      });
+    } catch (error) {
+      console.error("Error triggering free trial limit reached webhook:", error);
+    }
+  };
+
+  const triggerUserSubscribed = async (subscriptionData?: any) => {
+    if (!user) return;
+
+    try {
+      await supabase.functions.invoke('user-subscribed-webhook', {
+        body: {
+          userId: user.id,
+          subscriptionData
+        }
+      });
+    } catch (error) {
+      console.error("Error triggering user subscribed webhook:", error);
     }
   };
 
@@ -186,6 +249,10 @@ export const useFreeTrial = (user: User | null) => {
     ...freeTrialStatus,
     incrementStudyCount,
     triggerWebhookEvent,
+    triggerUserRegistered,
+    triggerStudyCompleted,
+    triggerFreeTrialLimitReached,
+    triggerUserSubscribed,
     refreshStatus: fetchFreeTrialStatus,
     checkSubscriptionStatus,
     createCheckout,

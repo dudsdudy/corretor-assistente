@@ -56,6 +56,14 @@ const Index = () => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Trigger user registered webhook for new sign-ins
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Use a slight delay to ensure all user data is properly set
+          setTimeout(() => {
+            freeTrialStatus.triggerUserRegistered();
+          }, 1000);
+        }
       }
     );
 
@@ -67,7 +75,7 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [freeTrialStatus]);
 
   useEffect(() => {
     if (!loading && !session) {

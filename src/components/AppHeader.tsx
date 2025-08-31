@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFreeTrial } from "@/hooks/useFreeTrial";
+import FreeTrialCounter from "./FreeTrialCounter";
 import { User } from "@supabase/supabase-js";
 import { 
   Shield, 
@@ -165,6 +166,15 @@ const AppHeader = ({
         </div>
         
         <div className="flex items-center gap-2">
+          {!freeTrialStatus.loading && user && (
+            <FreeTrialCounter
+              studiesUsed={freeTrialStatus.studiesUsed}
+              studiesRemaining={freeTrialStatus.studiesRemaining}
+              studiesLimit={freeTrialStatus.studiesLimit}
+              isPremium={freeTrialStatus.isPremium}
+              variant="header"
+            />
+          )}
           {!isMobile ? (
             <div className="flex items-center gap-3">
               <NotificationBadge />
