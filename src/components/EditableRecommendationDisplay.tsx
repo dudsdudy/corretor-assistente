@@ -395,6 +395,8 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
   const [isEditingSummaryContent, setIsEditingSummaryContent] = useState(false);
   const [quotationValidity, setQuotationValidity] = useState("30 dias");
   const [showProfessionalProposal, setShowProfessionalProposal] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfGenerationTime, setPdfGenerationTime] = useState(0);
   const [hoursSaved, setHoursSaved] = useState(0);
   const [clientSalary, setClientSalary] = useState(0);
   const [newCoverageType, setNewCoverageType] = useState("");
@@ -426,22 +428,29 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
   }, []);
 
   useEffect(() => {
-    setCoverages(analysis.recommendedCoverages.map((coverage, index) => ({
-      ...coverage,
-      id: `coverage-${index}`,
-      monthlyPremium: 0,
-      insurer: "",
-      customInsurerName: "",
-      isEditingTitle: false,
-      isEditingContent: false,
-      isEditingPriority: false,
-      isEditingPremium: false,
-      isCustom: false
-    })));
-    setSummaryContent(analysis.summary);
-    setHoursSaved(3.5);
-    setClientSalary(0);
-  }, [analysis]);
+    let timer: NodeJS.Timeout | null = null;
+    if (isGeneratingPDF) {
+      timer = setInterval(() => {
+        setPdfGenerationTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setPdfGenerationTime(0);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isGeneratingPDF]);
+
+  const handleGeneratePDF = async () => {
+    if (!onGeneratePDF) return;
+    
+    setIsGeneratingPDF(true);
+    try {
+      await onGeneratePDF();
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   const updateCoveragePremium = (index: number, premium: number) => {
     setCoverages(prev => prev.map((coverage, i) => 
@@ -670,9 +679,19 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
         </Button>
         
         {onGeneratePDF && (
-          <Button onClick={onGeneratePDF} className="flex items-center gap-2">
+          <Button 
+            onClick={handleGeneratePDF} 
+            disabled={isGeneratingPDF}
+            className="flex items-center gap-2"
+          >
             <FileText className="h-4 w-4" />
-            Gerar PDF
+            {isGeneratingPDF ? (
+              <>
+                Gerando PDF... {pdfGenerationTime}s
+              </>
+            ) : (
+              "Gerar PDF"
+            )}
           </Button>
         )}
         
