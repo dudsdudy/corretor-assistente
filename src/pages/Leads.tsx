@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,7 +15,8 @@ import {
   Eye,
   Trash2,
   Filter,
-  TrendingUp
+  TrendingUp,
+  Download
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +42,7 @@ const Leads = () => {
   const [analyses, setAnalyses] = useState<ClientAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   const [selectedAnalysis, setSelectedAnalysis] = useState<ClientAnalysis | null>(null);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const navigate = useNavigate();
@@ -184,6 +187,39 @@ const Leads = () => {
     }).format(value);
   };
 
+  const downloadReport = () => {
+    const [year, month] = selectedMonth.split('-');
+    const filteredData = analyses.filter(analysis => {
+      const analysisDate = new Date(analysis.created_at);
+      return analysisDate.getFullYear() === parseInt(year) && 
+             analysisDate.getMonth() === parseInt(month) - 1;
+    });
+
+    const reportData = filteredData.map(analysis => ({
+      'Nome do Cliente': analysis.client_name,
+      'Idade': analysis.client_age || 'N/A',
+      'Profissão': analysis.client_profession || 'N/A',
+      'Renda Mensal': analysis.monthly_income ? formatCurrency(analysis.monthly_income) : 'N/A',
+      'Perfil de Risco': analysis.risk_profile,
+      'Status': getStatusLabel(analysis.status),
+      'Prêmio Mensal': formatCurrency(computeTotalMonthlyPremium(analysis)),
+      'Data de Criação': new Date(analysis.created_at).toLocaleDateString('pt-BR'),
+      'Última Atualização': new Date(analysis.updated_at).toLocaleDateString('pt-BR')
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(reportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Relatório de Leads");
+    
+    const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    XLSX.writeFile(wb, `Relatorio_Leads_${monthName.replace(' ', '_')}.xlsx`);
+
+    toast({
+      title: "Relatório baixado",
+      description: `Relatório de ${monthName} baixado com sucesso`,
+    });
+  };
+
   const filteredAnalyses = statusFilter === "todos" 
     ? analyses 
     : analyses.filter(analysis => analysis.status === statusFilter);
@@ -219,6 +255,23 @@ const Leads = () => {
                 <SelectItem value="perdido">Perdidos</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-40"
+            />
+            <Button
+              onClick={downloadReport}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Baixar Relatório
+            </Button>
           </div>
         </div>
 
