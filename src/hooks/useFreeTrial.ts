@@ -79,16 +79,24 @@ export const useFreeTrial = (user: User | null) => {
   const incrementStudyCount = async (): Promise<boolean> => {
     if (!user || freeTrialStatus.isPremium) return true;
 
+    console.log("Tentando incrementar estudo para usuário:", user.id);
+
     try {
       // Use the database function to safely increment
       const { data, error } = await supabase.rpc('increment_free_studies_used', {
         p_user_id: user.id
       });
 
-      if (error) throw error;
+      console.log("Resultado da função increment_free_studies_used:", { data, error });
+
+      if (error) {
+        console.error("Erro ao incrementar estudos:", error);
+        throw error;
+      }
 
       if (data && data.length > 0) {
         const result = data[0];
+        console.log("Dados do resultado:", result);
         const updatedStatus = {
           studiesUsed: result.studies_used,
           studiesRemaining: result.studies_remaining,

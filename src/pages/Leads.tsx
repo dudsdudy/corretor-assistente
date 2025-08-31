@@ -341,7 +341,7 @@ const Leads = () => {
                     : `Nenhum lead com status "${getStatusLabel(statusFilter)}" encontrado.`
                   }
                 </p>
-                <Button onClick={() => navigate("/")} variant="outline">
+                <Button onClick={() => navigate("/app")} variant="outline">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Criar Novo Estudo
                 </Button>

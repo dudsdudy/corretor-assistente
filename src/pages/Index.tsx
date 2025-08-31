@@ -97,6 +97,11 @@ const Index = () => {
       // Clear any stored analysis data when not authenticated
       localStorage.removeItem('recoveredAnalysis');
       navigate("/auth", { replace: true });
+    } else if (session) {
+      // Redirect authenticated users to the app
+      if (window.location.pathname === '/') {
+        navigate("/app", { replace: true });
+      }
     }
   }, [session, loading, navigate]);
 
@@ -127,8 +132,12 @@ const Index = () => {
   };
 
   const handleFormSubmit = async (clientData: ClientData) => {
+    console.log("Iniciando submissão do formulário:", clientData);
+    console.log("Status do trial:", freeTrialStatus);
+    
     // Check if user can create more studies
     if (!freeTrialStatus.canCreateStudy) {
+      console.log("Usuário não pode criar mais estudos, mostrando modal de upgrade");
       setShowUpgradeModal(true);
       return;
     }
@@ -146,7 +155,9 @@ const Index = () => {
     console.log("Análise gerada:", analysisResult);
     
     // Increment study count
+    console.log("Tentando incrementar contador de estudos...");
     const canContinue = await freeTrialStatus.incrementStudyCount();
+    console.log("Resultado do incremento:", canContinue);
     
     if (!canContinue && !freeTrialStatus.isPremium) {
       // This will trigger the upgrade modal after showing results

@@ -114,7 +114,7 @@ const Admin = () => {
           description: "Você não tem permissão para acessar o painel administrativo.",
           variant: "destructive",
         });
-        navigate("/");
+        navigate("/app");
         return;
       }
 
@@ -126,7 +126,7 @@ const Admin = () => {
         description: error.message,
         variant: "destructive",
       });
-      navigate("/");
+      navigate("/app");
     } finally {
       setLoading(false);
     }
@@ -499,7 +499,7 @@ const Admin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Button onClick={() => navigate("/")} variant="outline">
+            <Button onClick={() => navigate("/app")} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar ao Início
             </Button>
@@ -517,7 +517,7 @@ const Admin = () => {
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/app")}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />

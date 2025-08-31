@@ -236,7 +236,7 @@ const Sales = () => {
         {/* Action Bar */}
         <div className="flex items-center justify-end mb-8">
 
-          <Button onClick={() => navigate("/")} className="flex items-center gap-2">
+          <Button onClick={() => navigate("/app")} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Novo Lead
           </Button>
@@ -395,7 +395,7 @@ const Sales = () => {
               <p className="text-muted-foreground mb-4">
                 Comece criando seu primeiro estudo de seguro de vida para alimentar seu pipeline de vendas.
               </p>
-              <Button onClick={() => navigate("/")} variant="outline">
+              <Button onClick={() => navigate("/app")} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Primeiro Estudo
               </Button>
