@@ -94,14 +94,25 @@ export const useFreeTrial = (user: User | null) => {
         throw error;
       }
 
-      if (data && data.length > 0) {
+      console.log("Dados recebidos (tipo e conteúdo):", typeof data, data);
+      
+      if (data && Array.isArray(data) && data.length > 0) {
+        // A função SQL retorna um objeto com propriedades nomeadas
         const result = data[0];
-        console.log("Dados do resultado:", result);
+        console.log("Primeiro resultado:", result);
+        
+        // Usar as propriedades corretas do resultado
+        const studiesUsed = result.studies_used || 0;
+        const studiesRemaining = result.studies_remaining || 0;
+        const limitReached = result.limit_reached || false;
+        
+        console.log("Valores extraídos:", { studiesUsed, studiesRemaining, limitReached });
+        
         const updatedStatus = {
-          studiesUsed: result.studies_used,
-          studiesRemaining: result.studies_remaining,
+          studiesUsed: Number(studiesUsed),
+          studiesRemaining: Number(studiesRemaining),
           studiesLimit: freeTrialStatus.studiesLimit,
-          canCreateStudy: !result.limit_reached || freeTrialStatus.isPremium,
+          canCreateStudy: !limitReached || freeTrialStatus.isPremium,
           isPremium: freeTrialStatus.isPremium,
           loading: false,
           subscriptionTier: freeTrialStatus.subscriptionTier,
@@ -111,15 +122,15 @@ export const useFreeTrial = (user: User | null) => {
         setFreeTrialStatus(updatedStatus);
 
         // Trigger specific webhook events for N8N based on the situation
-        if (result.limit_reached && !freeTrialStatus.isPremium) {
+        if (limitReached && !freeTrialStatus.isPremium) {
           // Free trial limit reached - trigger conversion campaign
           await triggerFreeTrialLimitReached();
         } else {
           // Study completed - trigger follow-up based on remaining studies
-          await triggerStudyCompleted(result.studies_remaining);
+          await triggerStudyCompleted(studiesRemaining);
         }
 
-        return !result.limit_reached;
+        return !limitReached;
       }
       
       return true;
