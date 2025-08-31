@@ -50,12 +50,26 @@ const Index = () => {
   const freeTrialStatus = useFreeTrial(user);
 
   useEffect(() => {
+    // Clear any problematic stored auth state first
+    const clearAuthData = async () => {
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch (error) {
+        console.log('Auth cleanup:', error);
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Clear auth errors on sign out
+        if (event === 'SIGNED_OUT') {
+          clearAuthData();
+        }
         
         // Trigger user registered webhook for new sign-ins
         if (event === 'SIGNED_IN' && session?.user) {
@@ -87,10 +101,15 @@ const Index = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch(() => {
+      // If session check fails, clear auth and redirect
+      setSession(null);
+      setUser(null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []); // Remover dependência problemática
+  }, []);
 
   useEffect(() => {
     if (!loading && !session) {
@@ -142,14 +161,24 @@ const Index = () => {
       return;
     }
 
-    // Basic validation to avoid estudos com valores zerados
-    if (!clientData.age || clientData.age < 18 || !clientData.profession || clientData.monthlyIncome <= 0) {
+    // Basic validation - only check essential fields
+    if (!clientData.name || !clientData.age || clientData.age < 18 || !clientData.profession) {
       toast({
         title: "Dados incompletos",
-        description: "Preencha idade, profissão e renda mensal (> 0) para gerar o estudo.",
+        description: "Preencha nome, idade (≥18) e profissão para gerar o estudo.",
         variant: "destructive",
       });
       return;
+    }
+
+    // Se renda mensal não informada, definir um valor padrão baseado na profissão
+    if (!clientData.monthlyIncome || clientData.monthlyIncome <= 0) {
+      const defaultIncome = 5000; // Renda padrão caso não informada
+      clientData.monthlyIncome = defaultIncome;
+      toast({
+        title: "Renda estimada",
+        description: `Renda mensal estimada em R$ ${defaultIncome.toLocaleString('pt-BR')} para calcular o estudo.`,
+      });
     }
 
     setProcessingAnalysis(true);
@@ -336,31 +365,51 @@ const Index = () => {
     if (!element) return;
     
     try {
+      // Mobile-optimized PDF generation
+      const isMobile = window.innerWidth < 768;
+      
       // Adiciona classe para PDF antes de capturar
       element.classList.add('print-layout');
       document.body.classList.add('printing');
       
-      // Aguarda um pouco para que os estilos sejam aplicados
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Force mobile layout if needed
+      if (isMobile) {
+        element.style.width = '375px';
+        element.style.maxWidth = '375px';
+        element.style.fontSize = '14px';
+      }
       
-      // Configurações otimizadas para PDF com melhor qualidade
+      // Aguarda um pouco para que os estilos sejam aplicados
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Configurações otimizadas para PDF com melhor qualidade mobile
       const canvas = await html2canvas(element, { 
-        scale: 2, // Aumenta a qualidade
+        scale: isMobile ? 3 : 2, // Maior escala para mobile
         useCORS: true, 
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: element.scrollWidth,
+        width: isMobile ? 375 : element.scrollWidth,
         height: element.scrollHeight,
-        windowWidth: 1200,
+        windowWidth: isMobile ? 375 : 1200,
         windowHeight: element.scrollHeight,
-        logging: false, // Remove logs desnecessários
+        logging: false,
         removeContainer: true,
-        imageTimeout: 10000
+        imageTimeout: 15000,
+        onclone: (clonedDoc) => {
+          // Force styles on cloned document
+          const clonedElement = clonedDoc.getElementById('proposal-content');
+          if (clonedElement && isMobile) {
+            clonedElement.style.width = '375px';
+            clonedElement.style.maxWidth = '375px';
+            clonedElement.style.fontSize = '14px';
+            clonedElement.style.lineHeight = '1.4';
+          }
+        }
       });
       
-      const imgData = canvas.toDataURL('image/png', 1.0); // Qualidade máxima
+      const imgData = canvas.toDataURL('image/png', 1.0);
       
-      // Configuração do PDF otimizada
+      // Configuração do PDF otimizada para mobile
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -370,20 +419,21 @@ const Index = () => {
       
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 8; // Margens menores para melhor aproveitamento
+      const margin = isMobile ? 5 : 8;
       const availableWidth = pageWidth - (margin * 2);
       const availableHeight = pageHeight - (margin * 2);
       
       const imgProps = { width: canvas.width, height: canvas.height };
       const ratio = Math.min(availableWidth / (imgProps.width * 0.264583), availableHeight / (imgProps.height * 0.264583));
-      const imgWidth = (imgProps.width * 0.264583) * ratio; // Converte px para mm
+      const imgWidth = (imgProps.width * 0.264583) * ratio;
       const imgHeight = (imgProps.height * 0.264583) * ratio;
       
-      // Se a imagem for muito alta, dividir em páginas
+      // Melhor divisão de páginas para mobile
       if (imgHeight > availableHeight) {
         let currentY = 0;
         let pageNumber = 1;
         const pagesNeeded = Math.ceil(imgHeight / availableHeight);
+        const pageOverlap = isMobile ? 10 : 20; // Overlap para evitar cortes
         
         while (currentY < imgHeight && pageNumber <= pagesNeeded) {
           if (pageNumber > 1) {
@@ -391,17 +441,16 @@ const Index = () => {
           }
           
           const remainingHeight = Math.min(availableHeight, imgHeight - currentY);
-          const sourceY = (currentY / ratio) / 0.264583; // Converte de volta para px
-          const sourceHeight = (remainingHeight / ratio) / 0.264583;
+          const sourceY = Math.max(0, (currentY / ratio) / 0.264583 - (pageNumber > 1 ? pageOverlap : 0));
+          const sourceHeight = (remainingHeight / ratio) / 0.264583 + (pageNumber > 1 ? pageOverlap : 0);
           
-          // Cria um canvas temporário para a parte atual
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = canvas.width;
-          tempCanvas.height = sourceHeight;
+          tempCanvas.height = Math.min(sourceHeight, canvas.height - sourceY);
           const tempCtx = tempCanvas.getContext('2d');
           
-          if (tempCtx) {
-            tempCtx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
+          if (tempCtx && tempCanvas.height > 0) {
+            tempCtx.drawImage(canvas, 0, sourceY, canvas.width, tempCanvas.height, 0, 0, canvas.width, tempCanvas.height);
             const tempImgData = tempCanvas.toDataURL('image/png', 1.0);
             
             pdf.addImage(
@@ -410,11 +459,11 @@ const Index = () => {
               margin, 
               margin, 
               availableWidth, 
-              remainingHeight
+              Math.min(remainingHeight, availableHeight)
             );
           }
           
-          currentY += availableHeight;
+          currentY += availableHeight - (pageNumber > 1 ? pageOverlap / ratio / 0.264583 : 0);
           pageNumber++;
         }
       } else {
@@ -423,6 +472,13 @@ const Index = () => {
         const yPos = margin;
         
         pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
+      }
+      
+      // Reset mobile styles
+      if (isMobile) {
+        element.style.width = '';
+        element.style.maxWidth = '';
+        element.style.fontSize = '';
       }
       
       // Remove classes após captura

@@ -132,45 +132,46 @@ function SortableCoverageCard({
 
   return (
     <Card ref={setNodeRef} style={style} className="shadow-soft">
-      <CardContent className="p-4">
-        <div className="space-y-4">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-3">
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+            <div className="flex items-start gap-2 sm:gap-3 flex-1">
               <Button
                 variant="ghost"
                 size="sm"
-                className="cursor-grab active:cursor-grabbing print:hidden"
+                className="cursor-grab active:cursor-grabbing print:hidden flex-shrink-0"
                 {...attributes}
                 {...listeners}
               >
                 <GripVertical className="h-4 w-4" />
               </Button>
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary flex-shrink-0">
                 {getCoverageIcon(coverage.type)}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 {coverage.isEditingTitle ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                     <Input
                       value={coverage.type}
                       onChange={(e) => updateCoverageField(index, 'type', e.target.value)}
-                      className="font-semibold text-lg"
+                      className="font-semibold text-base sm:text-lg"
                     />
                     <Button 
                       size="sm" 
                       onClick={() => toggleCoverageEdit(index, 'title')}
+                      className="w-full sm:w-auto"
                     >
                       <Save className="h-4 w-4" />
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-lg">{coverage.type}</h4>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <h4 className="font-semibold text-base sm:text-lg break-words">{coverage.type}</h4>
                     <Button 
                       size="sm" 
                       variant="ghost" 
                       onClick={() => toggleCoverageEdit(index, 'title')}
-                      className="print:hidden"
+                      className="print:hidden w-full sm:w-auto"
                     >
                       <Edit3 className="h-4 w-4" />
                     </Button>
@@ -182,7 +183,7 @@ function SortableCoverageCard({
                        value={coverage.priority}
                        onValueChange={(value: "high" | "medium" | "low") => updateCoveragePriority(index, value)}
                      >
-                      <SelectTrigger className="w-24 h-6 text-xs">
+                      <SelectTrigger className="w-20 sm:w-24 h-6 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -216,65 +217,63 @@ function SortableCoverageCard({
                 )}
               </div>
             </div>
-            <div className="text-right">
-              <div className="flex items-center gap-2 justify-end">
-                <div>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(coverage.amount)}
-                  </p>
-                  {coverage.monthlyPremium && coverage.monthlyPremium > 0 && (
-                    <div className="flex items-center gap-1">
-                      <p className="text-sm text-muted-foreground">
-                        Prêmio: {formatCurrency(coverage.monthlyPremium)}/mês
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => togglePremiumEdit(index)}
-                        className="print:hidden h-5 px-1"
-                      >
-                        <DollarSign className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                  {coverage.insurer && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {coverage.insurer === "Outros" ? coverage.customInsurerName : coverage.insurer}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:text-right">
+              <div className="flex-1">
+                <p className="text-xl sm:text-2xl font-bold text-primary">
+                  {formatCurrency(coverage.amount)}
+                </p>
+                {coverage.monthlyPremium && coverage.monthlyPremium > 0 && (
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm text-muted-foreground">
+                      Prêmio: {formatCurrency(coverage.monthlyPremium)}/mês
                     </p>
-                  )}
-                </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-destructive hover:text-destructive print:hidden"
+                      onClick={() => togglePremiumEdit(index)}
+                      className="print:hidden h-5 px-1"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <DollarSign className="h-3 w-3" />
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir Cobertura</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja excluir a cobertura "{coverage.type}"? Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => removeCoverage(index)}>
-                        Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                  </div>
+                )}
+                {coverage.insurer && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {coverage.insurer === "Outros" ? coverage.customInsurerName : coverage.insurer}
+                  </p>
+                )}
               </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive print:hidden"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir Cobertura</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja excluir a cobertura "{coverage.type}"? Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => removeCoverage(index)}>
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
 
-          <div className="print:hidden grid grid-cols-2 gap-4">
+          <div className="print:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>Prêmio Mensal (R$)</Label>
+              <Label className="text-sm font-medium">Prêmio Mensal (R$)</Label>
               {coverage.isEditingPremium ? (
                 <div className="flex items-center gap-2">
                   <Input
@@ -282,6 +281,7 @@ function SortableCoverageCard({
                     value={coverage.monthlyPremium || ''}
                     onChange={(e) => updateCoveragePremium(index, parseFloat(e.target.value) || 0)}
                     placeholder="0,00"
+                    className="text-sm"
                   />
                   <Button 
                     size="sm" 
@@ -298,6 +298,7 @@ function SortableCoverageCard({
                     onChange={(e) => updateCoveragePremium(index, parseFloat(e.target.value) || 0)}
                     placeholder="0,00"
                     disabled
+                    className="text-sm"
                   />
                   <Button 
                     size="sm" 
@@ -310,13 +311,13 @@ function SortableCoverageCard({
               )}
             </div>
             <div>
-              <Label>Seguradora</Label>
+              <Label className="text-sm font-medium">Seguradora</Label>
               <div className="space-y-2">
                 <Select
                   value={coverage.insurer || ''}
                   onValueChange={(value) => updateCoverageInsurer(index, value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Selecione a seguradora" />
                   </SelectTrigger>
                   <SelectContent>
@@ -332,6 +333,7 @@ function SortableCoverageCard({
                     placeholder="Nome da seguradora"
                     value={coverage.customInsurerName || ''}
                     onChange={(e) => updateCoverageInsurer(index, "Outros", e.target.value)}
+                    className="text-sm"
                   />
                 )}
               </div>
@@ -355,12 +357,14 @@ function SortableCoverageCard({
                 <Textarea
                   value={coverage.justification}
                   onChange={(e) => updateCoverageField(index, 'justification', e.target.value)}
-                  rows={4}
+                  rows={3}
+                  className="text-sm"
                 />
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button 
                     size="sm" 
                     onClick={() => toggleCoverageEdit(index, 'content')}
+                    className="w-full sm:w-auto"
                   >
                     <Save className="h-4 w-4 mr-1" />
                     Salvar
@@ -369,6 +373,7 @@ function SortableCoverageCard({
                     size="sm" 
                     variant="outline" 
                     onClick={() => toggleCoverageEdit(index, 'content')}
+                    className="w-full sm:w-auto"
                   >
                     <X className="h-4 w-4 mr-1" />
                     Cancelar
@@ -376,7 +381,7 @@ function SortableCoverageCard({
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">{coverage.justification}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{coverage.justification}</p>
             )}
           </div>
         </div>

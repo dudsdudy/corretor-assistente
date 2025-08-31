@@ -120,31 +120,32 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-medium bg-gradient-card">
-      <CardHeader className="text-center">
-        <CardTitle className="flex items-center justify-center gap-2">
-          <FileText className="h-6 w-6 text-primary" />
+      <CardHeader className="text-center px-4 sm:px-6">
+        <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
+          <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           Dados do Cliente
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm sm:text-base">
           Preencha as informações para gerar uma recomendação personalizada
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <CardContent className="px-4 sm:px-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Basic Information */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome Completo</Label>
+              <Label htmlFor="name" className="text-sm font-medium">Nome Completo</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 placeholder="Nome do cliente"
                 required
+                className="h-10 text-sm"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="age">Idade</Label>
+              <Label htmlFor="age" className="text-sm font-medium">Idade</Label>
               <Input
                 id="age"
                 type="number"
@@ -154,43 +155,47 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                 onChange={(e) => handleInputChange("age", parseInt(e.target.value) || 0)}
                 placeholder="32"
                 required
+                className="h-10 text-sm"
               />
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-3">
-              <Label>Sexo</Label>
+              <Label className="text-sm font-medium">Sexo</Label>
               <RadioGroup
                 value={formData.gender}
                 onValueChange={(value) => handleInputChange("gender", value)}
+                className="flex flex-row gap-6 sm:flex-col sm:gap-3"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="masculino" id="male" />
-                  <Label htmlFor="male">Masculino</Label>
+                  <RadioGroupItem value="masculino" id="male" className="h-4 w-4" />
+                  <Label htmlFor="male" className="text-sm">Masculino</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="feminino" id="female" />
-                  <Label htmlFor="female">Feminino</Label>
+                  <RadioGroupItem value="feminino" id="female" className="h-4 w-4" />
+                  <Label htmlFor="female" className="text-sm">Feminino</Label>
                 </div>
               </RadioGroup>
             </div>
-            <ProfessionAutocomplete
-              value={formData.profession}
-              onChange={(value) => handleInputChange("profession", value)}
-              required
-            />
+            <div className="space-y-2">
+              <ProfessionAutocomplete
+                value={formData.profession}
+                onChange={(value) => handleInputChange("profession", value)}
+                required
+              />
+            </div>
           </div>
 
           {/* Financial Information */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-success" />
+          <div className="border-t pt-4 sm:pt-6">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+              <Calculator className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
               Informações Financeiras
             </h3>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="monthlyIncome">Renda Mensal (R$)</Label>
+                <Label htmlFor="monthlyIncome" className="text-sm font-medium">Renda Mensal (R$)</Label>
                 <Input
                   id="monthlyIncome"
                   type="number"
@@ -200,10 +205,11 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                   onChange={(e) => handleInputChange("monthlyIncome", parseFloat(e.target.value) || 0)}
                   placeholder="5000.00"
                   required
+                  className="h-10 text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="currentDebts">Dívidas Atuais (R$)</Label>
+                <Label htmlFor="currentDebts" className="text-sm font-medium">Dívidas Atuais (R$)</Label>
                 <Input
                   id="currentDebts"
                   type="number"
@@ -212,6 +218,7 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                   value={formData.currentDebts || ""}
                   onChange={(e) => handleInputChange("currentDebts", parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
+                  className="h-10 text-sm"
                 />
               </div>
             </div>
