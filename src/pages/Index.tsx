@@ -142,6 +142,16 @@ const Index = () => {
       return;
     }
 
+    // Basic validation to avoid estudos com valores zerados
+    if (!clientData.age || clientData.age < 18 || !clientData.profession || clientData.monthlyIncome <= 0) {
+      toast({
+        title: "Dados incompletos",
+        description: "Preencha idade, profissão e renda mensal (> 0) para gerar o estudo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setProcessingAnalysis(true);
     
     // Store the client data for later use
