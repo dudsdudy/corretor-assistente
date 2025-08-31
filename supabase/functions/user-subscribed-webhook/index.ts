@@ -26,13 +26,33 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // Parse request body - this webhook can be called by Stripe or authenticated users
     const { userId, subscriptionData } = await req.json();
     
+    // Get authenticated user if this is called from frontend
+    const authHeader = req.headers.get('Authorization');
+    let authenticatedUserId = null;
+    
+    if (authHeader) {
+      const { data: { user } } = await supabaseClient.auth.getUser(
+        authHeader.replace('Bearer ', '')
+      );
+      authenticatedUserId = user?.id;
+    }
+
+    // If called from frontend, ensure user can only update their own subscription
+    if (authHeader && authenticatedUserId !== userId) {
+      return new Response(JSON.stringify({ error: 'Access denied: cannot update subscription for other users' }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     if (!userId) {
       throw new Error("userId is required");
     }
 
-    logStep("Processing user subscription", { userId, subscriptionData });
+    logStep("Processing user subscription", { userId, subscriptionData, authenticatedUserId });
 
     // Get user profile data
     const { data: profile, error: profileError } = await supabaseClient

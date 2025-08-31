@@ -26,13 +26,33 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { userId, studyData, studiesRemaining } = await req.json();
+    // Parse request body
+    const { studyData, studiesRemaining } = await req.json();
     
-    if (!userId) {
-      throw new Error("userId is required");
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    logStep("Processing study completion", { userId, studiesRemaining });
+    // Authenticate user using the provided JWT
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      logStep('Authentication failed', { authError });
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    const userId = user.id;
+    logStep("Processing authenticated study completion", { userId, studiesRemaining });
 
     // Get user profile data
     const { data: profile, error: profileError } = await supabaseClient
