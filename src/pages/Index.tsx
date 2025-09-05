@@ -29,6 +29,7 @@ import heroImage from "@/assets/hero-insurance.jpg";
 import ClientDataForm, { ClientData } from "@/components/ClientDataForm";
 import VoiceInput from "@/components/VoiceInput";
 import RecommendationDisplay, { ClientAnalysis } from "@/components/RecommendationDisplay";
+import TimeSavedCounter from "@/components/TimeSavedCounter";
 import EditableRecommendationDisplay from "@/components/EditableRecommendationDisplay";
 import AppHeader from "@/components/AppHeader";
 import jsPDF from "jspdf";
@@ -151,52 +152,54 @@ const Index = () => {
   };
 
   const handleFormSubmit = async (clientData: ClientData) => {
-    console.log("Iniciando submissão do formulário:", clientData);
-    console.log("Status do trial:", freeTrialStatus);
+    console.log("🚀 Iniciando submissão do formulário:", clientData);
+    console.log("📊 Status do trial:", freeTrialStatus);
     
     // Check if user can create more studies
     if (!freeTrialStatus.canCreateStudy) {
-      console.log("Usuário não pode criar mais estudos, mostrando modal de upgrade");
+      console.log("⚠️ Usuário não pode criar mais estudos, mostrando modal de upgrade");
       setShowUpgradeModal(true);
       return;
     }
 
-    // Basic validation - only check essential fields
-    if (!clientData.name || !clientData.age || clientData.age < 18) {
+    // Validação simplificada - apenas nome é obrigatório
+    if (!clientData.name || clientData.name.trim() === "") {
       toast({
-        title: "Dados incompletos",
-        description: "Preencha nome e idade (≥18) para gerar o estudo.",
+        title: "Nome obrigatório",
+        description: "Por favor, informe o nome do cliente.",
         variant: "destructive",
       });
       return;
     }
 
-    // Se renda mensal não informada, definir um valor padrão baseado na profissão
-    if (!clientData.monthlyIncome || clientData.monthlyIncome <= 0) {
-      const defaultIncome = 5000; // Renda padrão caso não informada
-      clientData.monthlyIncome = defaultIncome;
+    // Valores padrão para campos não preenchidos
+    const processedData = {
+      ...clientData,
+      age: clientData.age || 30, // Idade padrão se não informada
+      monthlyIncome: clientData.monthlyIncome || 5000, // Renda padrão se não informada
+      profession: clientData.profession || "Não informado",
+      gender: clientData.gender || "masculino",
+      healthStatus: clientData.healthStatus || "bom"
+    };
+
+    if (clientData.monthlyIncome <= 0 || !clientData.monthlyIncome) {
       toast({
         title: "Renda estimada",
-        description: `Renda mensal estimada em R$ ${defaultIncome.toLocaleString('pt-BR')} para calcular o estudo.`,
+        description: `Renda mensal estimada em R$ 5.000 para calcular o estudo.`,
       });
-    }
-
-    // Se profissão não informada, usar valor padrão
-    if (!clientData.profession || clientData.profession.trim() === "") {
-      clientData.profession = "Não informado";
     }
 
     setProcessingAnalysis(true);
     
-    // Store the client data for later use
-    setOriginalClientData(clientData);
-    console.log("Processando análise para cliente:", clientData);
+    // Store the processed client data for later use
+    setOriginalClientData(processedData);
+    console.log("🔄 Processando análise para cliente:", processedData);
     
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    const analysisResult = generateMockAnalysis(clientData);
-    console.log("Análise gerada:", analysisResult);
+    const analysisResult = generateMockAnalysis(processedData);
+    console.log("✅ Análise gerada com sucesso:", analysisResult);
     
     // Increment study count
     console.log("Tentando incrementar contador de estudos...");

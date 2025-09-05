@@ -360,84 +360,65 @@ body.printing * {
   print-color-adjust: exact !important;
 }
 
-/* Mobile responsiveness improvements */
-@media screen and (max-width: 768px) {
-  .container {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
+/* Mobile optimizations */
+.mobile-form-card {
+  @apply mx-2 my-4;
+}
+
+.mobile-input {
+  @apply focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors;
+}
+
+.mobile-select-trigger {
+  min-height: 44px !important;
+}
+
+@media (max-width: 640px) {
+  .mobile-form-card .space-y-6 > * + * {
+    margin-top: 1rem;
   }
   
-  .grid-cols-2 {
-    grid-template-columns: 1fr !important;
+  .mobile-form-card .grid {
+    @apply grid-cols-1;
   }
   
-  .md\:grid-cols-2 {
-    grid-template-columns: 1fr !important;
+  /* Better mobile select styling */
+  [data-radix-select-trigger] {
+    @apply min-h-[44px] text-base;
   }
   
-  .sm\:grid-cols-2 {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  
-  /* Improve select dropdowns on mobile */
-  [data-radix-popper-content-wrapper] {
-    z-index: 9999 !important;
-    position: fixed !important;
-  }
-  
-  /* Fix form inputs on mobile */
-  input, select, textarea {
-    font-size: 16px !important; /* Prevents zoom on iOS */
-  }
-  
-  /* Better card spacing on mobile */
-  .space-y-6 > * + * {
-    margin-top: 1rem !important;
-  }
-  
-  .space-y-4 > * + * {
-    margin-top: 0.75rem !important;
-  }
-  
-  /* Mobile-friendly buttons */
-  .grid.gap-4 {
-    gap: 0.75rem !important;
-  }
-  
-  .text-3xl {
-    font-size: 1.5rem !important;
-  }
-  
-  .text-2xl {
-    font-size: 1.25rem !important;
-  }
-  
-  .text-xl {
-    font-size: 1.125rem !important;
-  }
-  
-  /* Fix select dropdowns on mobile */
   [data-radix-select-content] {
+    @apply max-h-[60vh];
     z-index: 9999 !important;
     background: hsl(var(--popover)) !important;
     border: 1px solid hsl(var(--border)) !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
   }
   
-  /* Dark mode select fixes */
-  .dark [data-radix-select-content] {
-    background: hsl(var(--popover)) !important;
-    color: hsl(var(--popover-foreground)) !important;
+  /* Prevent zoom on iOS */
+  input[type="text"], 
+  input[type="number"], 
+  input[type="email"], 
+  select, 
+  textarea {
+    font-size: 16px !important;
   }
   
-  /* Prevent mobile layout breaks */
-  .mobile-form-card .grid {
+  /* Better mobile form spacing */
+  .space-y-2 > * + * {
+    margin-top: 0.75rem;
+  }
+  
+  /* Mobile-friendly card padding */
+  .card-mobile {
+    @apply px-3 py-4 rounded-lg;
+  }
+  
+  /* Fix mobile layout breaks */
+  .mobile-form-card .grid-cols-2 {
     grid-template-columns: 1fr !important;
   }
   
-  /* Better mobile card layout */
-  .mobile-form-card {
-    max-width: 100% !important;
-    margin: 0.5rem !important;
+  .mobile-form-card .sm\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
   }
 }

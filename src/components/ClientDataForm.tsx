@@ -119,29 +119,28 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-medium bg-gradient-card mobile-form-card">
-      <CardHeader className="text-center px-3 sm:px-6">
-        <CardTitle className="flex items-center justify-center gap-2 text-base sm:text-xl">
-          <FileText className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
+    <Card className="w-full max-w-2xl mx-auto shadow-lg bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <CardHeader className="text-center px-4 py-4">
+        <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
+          <FileText className="h-5 w-5 text-primary" />
           Dados do Cliente
         </CardTitle>
-        <CardDescription className="text-xs sm:text-base">
+        <CardDescription className="text-sm sm:text-base">
           Preencha as informações para gerar uma recomendação personalizada
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-3 sm:px-6">
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
+      <CardContent className="px-4 pb-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Basic Information */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium">Nome Completo</Label>
+              <Label htmlFor="name" className="text-sm font-medium">Nome Completo *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 placeholder="Nome do cliente"
-                required
-                className="h-10 text-sm"
+                className="h-11 text-sm mobile-input"
               />
             </div>
             <div className="space-y-2">
@@ -153,28 +152,27 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                 max="85"
                 value={formData.age || ""}
                 onChange={(e) => handleInputChange("age", parseInt(e.target.value) || 0)}
-                placeholder="32"
-                required
-                className="h-10 text-sm"
+                placeholder="30"
+                className="h-11 text-sm mobile-input"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="space-y-2 sm:space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-3">
               <Label className="text-sm font-medium">Sexo</Label>
               <RadioGroup
                 value={formData.gender}
                 onValueChange={(value) => handleInputChange("gender", value)}
-                className="flex flex-row gap-4 sm:flex-col sm:gap-3"
+                className="flex flex-row gap-6"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="masculino" id="male" className="h-4 w-4" />
-                  <Label htmlFor="male" className="text-sm">Masculino</Label>
+                  <Label htmlFor="male" className="text-sm cursor-pointer">Masculino</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="feminino" id="female" className="h-4 w-4" />
-                  <Label htmlFor="female" className="text-sm">Feminino</Label>
+                  <Label htmlFor="female" className="text-sm cursor-pointer">Feminino</Label>
                 </div>
               </RadioGroup>
             </div>
@@ -203,7 +201,7 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                   value={formData.monthlyIncome || ""}
                   onChange={(e) => handleInputChange("monthlyIncome", parseFloat(e.target.value) || 0)}
                   placeholder="5000.00"
-                  className="h-10 text-sm"
+                  className="h-11 text-sm mobile-input"
                 />
               </div>
               <div className="space-y-2">
@@ -216,7 +214,7 @@ const ClientDataForm = ({ onSubmit, loading = false }: ClientDataFormProps) => {
                   value={formData.currentDebts || ""}
                   onChange={(e) => handleInputChange("currentDebts", parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
-                  className="h-10 text-sm"
+                  className="h-11 text-sm mobile-input"
                 />
               </div>
             </div>
