@@ -446,6 +446,32 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
     };
   }, [isGeneratingPDF]);
 
+  // Carrega coberturas a partir da análise e inicializa campos editáveis
+  useEffect(() => {
+    if (!analysis) return;
+    const mapped = (analysis.recommendedCoverages || []).map((c, idx) => ({
+      id: `coverage-${idx}-${Date.now()}`,
+      type: c.type,
+      amount: c.amount,
+      justification: c.justification,
+      priority: c.priority,
+      calculationBasis: c.calculationBasis,
+      riskFactors: c.riskFactors || [],
+      monthlyPremium: 0,
+      insurer: "",
+      customInsurerName: "",
+      isEditingTitle: false,
+      isEditingContent: false,
+      isEditingPriority: false,
+      isEditingPremium: false,
+      isCustom: false,
+    } as EditableCoverage));
+    setCoverages(mapped);
+    setSummaryContent(analysis.summary || "");
+    // Estimativa simples de horas economizadas
+    setHoursSaved(Math.max(1, Math.round((mapped.length || 4) * 0.5)));
+  }, [analysis]);
+
   const handleGeneratePDF = async () => {
     if (!onGeneratePDF) return;
     
@@ -573,7 +599,9 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
     }
   }
 
-  const totalCoverage = coverages.reduce((sum, coverage) => sum + coverage.amount, 0);
+  const totalCoverage = (coverages.length
+    ? coverages.reduce((sum, coverage) => sum + coverage.amount, 0)
+    : (analysis.recommendedCoverages || []).reduce((sum, c) => sum + c.amount, 0));
   const totalMonthlyPremium = coverages.reduce((sum, coverage) => sum + (coverage.monthlyPremium || 0), 0);
 
   const handleSaveWithExtendedData = () => {

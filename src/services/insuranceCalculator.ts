@@ -489,13 +489,18 @@ export class InsuranceCalculatorService {
     };
 
     // Calcular coberturas
-    const coverages: CoverageRecommendation[] = [
+    let coverages: CoverageRecommendation[] = [
       this.calculateLifeInsurance(clientData, riskFactors),
       this.calculateDisabilityInsurance(clientData, riskFactors),
       this.calculateCriticalIllnessInsurance(clientData, riskFactors),
       this.calculateDailyIncapacityInsurance(clientData),
       this.calculateFuneralInsurance(clientData)
     ];
+
+    // Regra: Jovens (<25) sem dependentes não recebem "Morte" automaticamente
+    if (clientData.age < 25 && !clientData.hasDependents) {
+      coverages = coverages.filter(c => c.type.toLowerCase() !== 'morte');
+    }
 
     // Determinar perfil de risco geral
     const riskProfile = this.determineRiskProfile(riskFactors);

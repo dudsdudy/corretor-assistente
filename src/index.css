@@ -150,6 +150,11 @@
     @apply border-border;
   }
 
+  html {
+    /* Evita deslocamento da página ao abrir modais/menus (menor "pulo" no mobile) */
+    scrollbar-gutter: stable both-edges;
+  }
+ 
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
