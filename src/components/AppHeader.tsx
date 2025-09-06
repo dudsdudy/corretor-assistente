@@ -303,7 +303,7 @@ const AppHeader = ({
                       <Menu className="h-5 w-5" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-[300px]">
+                  <SheetContent side="right" className="w-[300px] max-w-[92vw]">
                     <div className="flex flex-col space-y-6 mt-8">
                       
                       {/* Navegação Principal */}

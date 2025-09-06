@@ -546,7 +546,7 @@ const Index = () => {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5 overflow-x-hidden">
       <AppHeader />
 
       {/* Main Content */}
@@ -715,13 +715,11 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            <div id="proposal-content">
             <EditableRecommendationDisplay 
               analysis={analysis} 
               onGeneratePDF={handleGeneratePDF}
               onSaveAnalysis={handleSaveAnalysis}
             />
-            </div>
           </div>
         )}
 

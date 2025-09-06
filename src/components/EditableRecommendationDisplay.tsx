@@ -652,7 +652,7 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="partnerBroker">Corretor Parceiro (opcional)</Label>
               <Input
@@ -752,7 +752,7 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
         <div className="space-y-6">
           {/* Internal Coverage View */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="text-xl font-semibold flex items-center gap-2">
                 <FileText className="h-6 w-6 text-primary" />
                 {isEditingSummaryTitle ? (
@@ -788,7 +788,7 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
             {/* Summary Content with Edit Functionality */}
             <Card className="mb-6">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-lg">Resumo Executivo</CardTitle>
                   <Button 
                     size="sm" 
@@ -870,7 +870,7 @@ export default function EditableRecommendationDisplay({ analysis, onGeneratePDF,
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="newCoverageType">Tipo de Cobertura</Label>
                     <Input
